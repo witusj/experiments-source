@@ -1,0 +1,272 @@
+---
+title: "XGBoost model for pairwise ranking"
+jupyter: python3
+---
+
+Certainly! Below is a template for a protocol of an experiment in operations research formatted in Markdown.
+
+------------------------------------------------------------------------
+
+## Objective
+
+**Objective**: *Testing the performance of an XGBoost model trained for ranking pairwise schedules.*
+
+## Background
+
+**Background Information**: *To find optimal solutions for appointment scheduling problems one approach is to create local search neighborhoods and evaluate each schedule. A better search method either (1) - creates smaller search neighborhoods or (2) - evaluates faster. In this experiment we develop an Machine Learning model using XGBoost that can evaluate two neighboring schedules and rank them according to preference.*
+
+## Hypothesis
+
+**Hypothesis**: *An XGBoost ranking model outperforms simple enumeration of each element of the pair.*
+
+## Methodology
+
+### Tools and Materials
+
+**Tools and Materials**: *List all tools, software, and materials needed for the experiment.*
+
+```{python}
+import numpy as np
+from sklearn.model_selection import train_test_split, cross_val_score, StratifiedKFold, GridSearchCV
+from sklearn.base import clone
+import xgboost as xgb
+```
+
+
+### Experimental Design
+
+**Design**: *We will create a random set of pairs of neighboring schedules with* $N = 12$ patients and $\ T = 18$ intervals of length $d = 5$.
+
+*A neighborhood consists of all schedules that differ by one patient only. Eg: (\[2,1,1\], \[1,1,2\]) are neighbors and (\[2,1,1\], \[1,0,3\]) are not.*
+
+*Service times will have a discrete. The probability of a scheduled patient not showing up will be $q = 0.20$.
+
+```{python}
+N = 12
+T = 18
+d = 5
+s = [0.0, 0.27, 0.28, 0.2, 0.15, 0.1]
+q = 0.20
+```
+
+### Variables
+
+-   **Independent Variables**: *A list of tuples with pairs of neighboring schedules.*
+-   **Dependent Variables**: *A list with rankings for each tuple of pairwise schedules. Eg: If the rank for (\[2,1,1\], \[1,1,2\]) is 1 this means that the schedule with index 1 (\[1,1,2\]) has the lowest objective value.*
+
+### Data Collection
+
+**Data Collection Method**: *The data set will be generated using simulation in which random samples will be drawn from the population of all possible schedules. For each sample a random neighboring schedule will be created.*
+
+### Sample Size and Selection
+
+**Sample Size**: *The total population size equals ${{N + T -1}\choose{N}} \approx 52\ mln$. The size of the training and test sets will be varied to explore the effect on model performance.*
+
+**Sample Selection**: *The samples will be drawn from a lexicographic order of possible schedules in order to accurately reflect the combinatorial nature of the problem and to ensure unbiased sampling from the entire combinatorial space.*
+
+### Experimental Procedure
+
+```{mermaid}
+graph TD
+    A["Create features"]:::path -->|"option 1"| B["from population"]
+    A -->|"option 2"| C["random subset"]:::path
+    B --> D["Create pairs"]:::path
+    C --> D
+    D -->|"option 1"| E["random"]
+    D -->|"option 2"| F["neighbors"]:::path
+    E --> G["Create labels"]:::path
+    F --> G
+    G -->|"option 1"| H["objective"]
+    G -->|"option 2"| I["ranking"]:::path
+    H --> J["Split dataset"]:::path
+    I --> J
+    J --> K["Train XGBoost"]:::path
+    K --> L["Evaluate model"]:::path
+    
+    classDef path stroke:#f00
+```
+
+**Step 1**: *Randomly select a subset of schedules.*
+
+```{python}
+from functions import random_combination_with_replacement
+
+num_schedules = 20000
+
+schedules = random_combination_with_replacement(T, N, num_schedules)
+for schedule in schedules[:5]:
+    print(f"Schedule: {schedule}")
+```
+
+**Step 2**: *Create pairs of neighboring schedules.*
+
+```{python}
+from functions import create_neighbors_list
+
+neighbors = create_neighbors_list(schedules)
+for neighbor in neighbors[:5]:
+    print(f"Neighbor: {neighbor[1]}")
+```
+
+**Step 3**: *For each schedule in each pair calculate the objective. For each pair save the index of the schedule that has the lowest objective value.*
+
+```{python}
+from functions import calculate_objective
+
+objectives = [[calculate_objective(neighbor[0], s, d, q), calculate_objective(neighbor[1], s, d, q)] for neighbor in neighbors]
+rankings = [0 if obj[0] < obj[1] else 1 for obj in objectives]
+for i in range(5):
+    print(f"Objectives: {objectives[i]}, Ranking: {rankings[i]}")
+```
+**Step 4**: *Create training and test sets.*
+
+```{python}
+# Prepare the dataset
+X = []
+for neighbor in neighbors:
+    X.append(neighbor[0] + neighbor[1])
+
+X = np.array(X)
+y = np.array(rankings)
+
+# Split the dataset into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+```
+
+**Step 5**: *Train the XGBoost model.*
+
+```{mermaid}
+flowchart TD
+    A[Start] --> B[Initialize StratifiedKFold]
+    B --> C[Initialize XGBClassifier]
+    C --> D[Set results as empty list]
+    D --> E[Loop through each split of cv split]
+    E --> F[Get train and test indices]
+    F --> G[Split X and y into X_train, X_test, y_train, y_test]
+    G --> H[Clone the classifier]
+    H --> I[Call fit_and_score function]
+    I --> J[Fit the estimator]
+    J --> K[Score on training set]
+    J --> L[Score on test set]
+    K --> M[Return estimator, train_score, test_score]
+    L --> M
+    M --> N[Append the results]
+    N --> E
+    E --> O[Loop ends]
+    O --> P[Print results]
+    P --> Q[End]
+```
+
+
+```{python}
+def fit_and_score(estimator, X_train, X_test, y_train, y_test):
+    """Fit the estimator on the train set and score it on both sets"""
+    estimator.fit(X_train, y_train, eval_set=[(X_test, y_test)])
+
+    train_score = estimator.score(X_train, y_train)
+    test_score = estimator.score(X_test, y_test)
+
+    return estimator, train_score, test_score
+
+
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=94)
+
+# Initialize the XGBClassifier without early stopping here
+clf = xgb.XGBClassifier(
+    tree_method="hist",
+    max_depth=6,
+    min_child_weight=1,
+    gamma=0.1,
+    subsample=0.8,
+    colsample_bytree=0.8,
+    learning_rate=0.1,
+    n_estimators=100,
+    early_stopping_rounds=10
+)
+
+results = []
+
+for train_idx, test_idx in cv.split(X, y):
+    X_train, X_test = X[train_idx], X[test_idx]
+    y_train, y_test = y[train_idx], y[test_idx]
+    
+    est, train_score, test_score = fit_and_score(
+        clone(clf), X_train, X_test, y_train, y_test
+    )
+    results.append((est, train_score, test_score))
+
+# Print results
+for i, (est, train_score, test_score) in enumerate(results):
+    print(f"Fold {i+1} - Train Score: {train_score:.4f}, Test Score: {test_score:.4f}")
+```
+
+
+## Analysis
+
+**Data Analysis Method**: *Describe the statistical or analytical methods that will be used to analyze the data.*
+
+```{python}
+# Fit the model on the entire dataset
+# Initialize the XGBClassifier without early stopping here
+
+clf = xgb.XGBClassifier(
+    tree_method="hist",
+    max_depth=6,
+    min_child_weight=1,
+    gamma=0.1,
+    subsample=0.8,
+    colsample_bytree=0.8,
+    learning_rate=0.1,
+    n_estimators=100
+)
+
+clf.fit(X, y)
+
+num_schedules = 10
+
+test_schedules = random_combination_with_replacement(T, N, num_schedules)
+test_neighbors = create_neighbors_list(test_schedules)
+test_objectives = [[calculate_objective(test_neighbor[0], s, d, q), calculate_objective(test_neighbor[1], s, d, q)] for test_neighbor in test_neighbors]
+test_rankings = [0 if test_obj[0] < test_obj[1] else 1 for test_obj in test_objectives]
+
+for i in range(num_schedules):
+    print(f"Neighbors: {test_neighbors[i]},\nObjectives: {objectives[i]}, Ranking: {rankings[i]}\n")
+
+input_X = test_neighbors
+X_new = []
+for neighbor in input_X:
+    X_new.append(neighbor[0] + neighbor[1])
+    
+# Predict the target for new data
+y_pred = clf.predict(X_new)
+
+# If you want to get the probability estimates
+y_pred_proba = clf.predict_proba(X_new)
+
+print(f"rankings = {np.array(test_rankings)}, \ny_pred = {y_pred}, \ny_pred_proba = \n{y_pred_proba}")
+```
+
+
+### Data Processing
+
+**Data Processing**: *Describe how the raw data will be processed and prepared for analysis.*
+
+### Statistical Tests
+
+**Statistical Tests**: *List the statistical tests that will be used to test the hypotheses.*
+
+## Results
+
+**Expected Results**: *Describe the expected outcomes or results of the experiment.*
+
+## Discussion
+
+**Discussion Points**: *Outline key points for discussion based on possible results. This may include interpretation of results, implications for theory and practice, limitations, and suggestions for future research.*
+
+## Timeline
+
+**Timeline**: *This experiment was started on 25-07-2024*
+
+## References
+
+**References**: *List any references or sources cited in the protocol.*
