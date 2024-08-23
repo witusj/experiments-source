@@ -1,5 +1,6 @@
 import math
 import random
+import json
 import numpy as np
 from itertools import combinations_with_replacement
 from typing import List, Generator
@@ -137,29 +138,48 @@ def create_neighbors_list(S: list[list[int]]) -> list[(list[int], list[int])]: #
     return(neighbors_list)
 
 def calculate_objective(schedule: list[int], s: list[float], d: int, q: float) -> float:
-    s = service_time_with_no_shows(s, q) # Adjust service times distribution for no-shows
-    sp = np.array([1], dtype=np.int64) # Set probability of first spillover time being zero to 1
-    wt_list = [] # Initialize wt_list for saving all waiting times for all patients in the schedule
-    ewt = 0 # Initialize sum of expected waiting times
-    for x in schedule: # For each interval -
-      if(x == 0): # In case there are no patients,
-        wt_temp = [np.array(sp)] # the spillover from the previous interval is recorded,
-        wt_list.append([]) # but there are no waiting times.
-        sp = [] # Initialize the spillover time distribution 
-        sp.append(np.sum(wt_temp[-1][:d+1])) # All the work from the previous interval's spillover that could not be processed will be added to the this interval's spillover.
-        sp[1:] = wt_temp[-1][d+1:]
-      else: # In case there are patients scheduled,
-        wt_temp = [np.array(sp)] # Initialize wt_temp for saving all waiting times for all patients in the interval. The first patient has to wait for the spillover work from the previous period.
-        ewt += np.dot(range(len(sp)), sp) # Add waiting time for first patient in interval
-        for i in range(x-1): # For each patient
-          wt = np.convolve(wt_temp[i], s) # Calculate the waiting time distribution
-          wt_temp.append(wt)
-          ewt += np.dot(range(len(wt)), wt)
-        wt_list.append(wt_temp)
-        sp = []
-        sp.append(np.sum(np.convolve(wt_temp[-1],s)[:d+1])) # Calculate the spillover
-        sp[1:] = np.convolve(wt_temp[-1],s)[d+1:]
-    return ewt
+    """
+    Calculate the objective value based on the given schedule and parameters.
+
+    This function adjusts the service times distribution for no-shows, calculates 
+    the waiting times for all patients in the schedule, and sums the expected 
+    waiting times.
+
+    Parameters:
+    - schedule (list[int]): A list representing the schedule intervals.
+    - s (list[float]): Service times distribution.
+    - d (int): Some integer parameter (likely related to time or patients).
+    - q (float): Probability related to no-shows.
+
+    Returns:
+    - tuple: 
+        - float: The sum of expected waiting times.
+        - float: The expected spillover time.
+    """
+    s = service_time_with_no_shows(s, q)
+    sp = np.array([1], dtype=np.int64)
+    wt_list = []
+    ewt = 0
+    for x in schedule:
+        if x == 0:
+            wt_temp = [np.array(sp)]
+            wt_list.append([])
+            sp = []
+            sp.append(np.sum(wt_temp[-1][:d+1]))
+            sp[1:] = wt_temp[-1][d+1:]
+        else:
+            wt_temp = [np.array(sp)]
+            ewt += np.dot(range(len(sp)), sp)
+            for i in range(x-1):
+                wt = np.convolve(wt_temp[i], s)
+                wt_temp.append(wt)
+                ewt += np.dot(range(len(wt)), wt)
+            wt_list.append(wt_temp)
+            sp = []
+            sp.append(np.sum(np.convolve(wt_temp[-1], s)[:d+1]))
+            sp[1:] = np.convolve(wt_temp[-1], s)[d+1:]
+        esp = np.dot(range(len(sp)), sp)  
+    return ewt, esp
   
 def service_time_with_no_shows(s, q):
     # """
@@ -176,3 +196,66 @@ def service_time_with_no_shows(s, q):
     s_adj = [(1 - q) * float(si) for si in s]
     s_adj[0] = s_adj[0] + q
     return(s_adj)
+
+def calculate_ambiguousness(y_pred_proba: np.ndarray) -> np.ndarray:
+    """
+    Calculate the ambiguousness for each array of probabilities.
+
+    Parameters:
+    y_pred_proba (np.ndarray): Array of shape (n_samples, n_classes) with predicted probabilities for each class.
+
+    Returns:
+    np.ndarray: Array of ambiguousness for each sample.
+    """
+    # Ensure probabilities are in numpy array
+    y_pred_proba = np.array(y_pred_proba)
+    
+    # Define a small bias term
+    epsilon = 1e-10
+    
+    # Add small bias term to probabilities that contain [0, 1] or [1, 0]
+    for i in range(len(y_pred_proba)):
+        if np.any(y_pred_proba[i] == 0):
+            print(f"{y_pred_proba[i]}: There is at least one zero in the array. Added bias term {epsilon}.")
+            # Add bias term
+            y_pred_proba[i] = np.clip(y_pred_proba[i], epsilon, 1 - epsilon)
+    
+    # Calculate ambiguousness for each array of probabilities
+    ambiguousness = -np.sum(y_pred_proba * np.log2(y_pred_proba), axis=1)
+    
+    return ambiguousness
+
+def compare_json(json1, json2):
+    """
+    Compares two JSON objects and returns a dictionary with the differences.
+    
+    Parameters:
+        json1 (dict): The first JSON object to compare.
+        json2 (dict): The second JSON object to compare.
+    
+    Returns:
+        dict: A dictionary showing the differences between the two JSON objects.
+    """
+    differences = {}
+    
+    for key in json1.keys():
+        if key in json2:
+            if json1[key] != json2[key]:
+                differences[key] = {
+                    "json1_value": json1[key],
+                    "json2_value": json2[key]
+                }
+        else:
+            differences[key] = {
+                "json1_value": json1[key],
+                "json2_value": "Key not found in json2"
+            }
+    
+    for key in json2.keys():
+        if key not in json1:
+            differences[key] = {
+                "json1_value": "Key not found in json1",
+                "json2_value": json2[key]
+            }
+
+    return differences
