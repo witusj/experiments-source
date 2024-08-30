@@ -42,6 +42,7 @@ from sklearn.base import clone
 import xgboost as xgb
 from xgboost.callback import TrainingCallback
 import plotly.graph_objects as go
+import pickle
 ```
 
 ### Experimental Design
@@ -54,16 +55,16 @@ import plotly.graph_objects as go
 
 *Service times will have a discrete distribution. The probability of a scheduled patient not showing up will be* $q = 0.20$.
 
-*The objective function will be the total waiting time of all patients. The model will be trained to predict which of the two neighboring schedules has the lowest objective value. The prediction time will be recorded. Then the same schedules will be evaluated by computing the objective value and then ranked.*
+*The objective function will be the weighted average of the total waiting time of all patients and overtime. The model will be trained to predict which of the two neighboring schedules has the lowest objective value. The prediction time will be recorded. Then the same schedules will be evaluated by computing the objective value and then ranked.*
 
 ```{python}
-N = 12
-T = 18
+N = 12 # Number of patients
+T = 18 # Number of intervals
 d = 5 # Length of each interval
 s = [0.0, 0.27, 0.28, 0.2, 0.15, 0.1] # Service times distribution
 q = 0.20 # Probability of a scheduled patient not showing up
 w = 0.8 # Weight for the waiting time in objective function
-num_schedules = 20000
+num_schedules = 20000 # Number of schedules to sample
 ```
 
 ### Variables
@@ -146,12 +147,17 @@ objectives_schedule_2 = [w * calculate_objective(neighbor[1], s, d, q)[0] + (1 -
 end = time.time()
 training_set_lab_time = end - start
 objectives = [[obj, objectives_schedule_2[i]] for i, obj in enumerate(objectives_schedule_1)]
-# rankings = [0 if obj[0] < obj[1] else 1 for obj in objectives]
 rankings = np.argmin(objectives, axis=1).tolist()
 for i in range(5):
     print(f"Objectives: {objectives[i]}, Ranking: {rankings[i]}")
 
 print(f"\nProcessing time: {training_set_lab_time} seconds\n")
+
+# Saving neighbors_list and objectives to a pickle file
+with open('neighbors_and_objectives.pkl', 'wb') as f:
+    pickle.dump({'neighbors_list': neighbors_list, 'objectives': objectives, 'rankings': rankings}, f)
+
+print("Data saved successfully to 'neighbors_and_objectives.pkl'")
 ```
 
 **Step 4**: *Create training and test sets.*
