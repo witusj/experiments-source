@@ -5,36 +5,87 @@ jupyter: python3
 
 ## Objective
 
-**Objective**: - Clearly define what you are aiming to accomplish with your experiment. This section sets the direction for your work.
+*Compare the performance (speed and accuracy) of a surrogate model (XGBoost regressor) with a conventional calculation for appointment scheduling objective function and against a ranking model.*
 
 ## Background
 
-**Background Information**: - Provide the necessary context for the experiment. Explain the theoretical or practical reasons behind your experiment, referencing relevant prior work. This section should help readers understand why the experiment is important.
+*To find optimal solutions for appointment scheduling problems one approach is to create local search neighborhoods and evaluate the schedules in that set. A better search method either (1) - creates smaller search neighborhoods or (2) - evaluates faster.*
+
+*One approach for speeding up evaluation is to create surrogate models, or metamodels. These are simplified representations of complex systems that are often created using machine learning techniques.*
+
+*In an earlier experiment we developed a ranking model that can rank two schedules according to preference. We established that a ranking model is significantly faster at choosing the best solution from a pair while retaining high accuracy levels.*
+
+*In this experiment we develop a Machine Learning model using XGBoost for evaluating a single schedule and let it compete with the conventional method as well as with the ranking model.*
 
 ## Hypothesis
 
-**Hypothesis**: - State your predictions about the experiment’s outcome. This hypothesis will give a benchmark against which to measure your results.
+*We expect a ranking model to be superior in speed compared to a XGBoost regressor model. The XGBoost regressor model will outperform the conventional model in speed.*
 
 ## Methodology
 
 ### Tools and Materials
 
-**Tools and Materials**: - List the software, libraries, datasets, and any other materials you will use in this experiment. Include specific versions or configurations that are crucial for reproducibility.
+List the software, libraries, datasets, and any other materials you will use in this experiment. Include specific versions or configurations that are crucial for reproducibility.
+
+```{python}
+import time
+import math
+import json
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split, cross_val_score, StratifiedKFold, GridSearchCV
+from sklearn.base import clone
+import xgboost as xgb
+from xgboost.callback import TrainingCallback
+import plotly.graph_objects as go
+import pickle
+```
 
 ### Experimental Design
 
-**Design**: - Describe the experimental setup in detail. Include how you will manipulate variables and what data you will collect. This part of the methodology outlines the overall strategy of your experiment.
+*We will create a random set of pairs of neighboring schedules with* $N = 12$ patients and $\ T = 18$ intervals of length $d = 5$.
+
+*A neighborhood consists of all schedules that differ by one patient only. Eg: (\[2,1,1\], \[1,1,2\]) are neighbors and (\[2,1,1\], \[1,0,3\]) are not.*
+
+*Service times will have a discrete distribution. The probability of a scheduled patient not showing up will be* $q = 0.20$.
+
+*The objective function will be the weighted average of the total waiting time of all patients and overtime. The model will be trained to predict the objective value of a given schedule. The prediction time will be recorded. Then the same schedules will be evaluated by computing the objective value using the conventional method.*
+
+```{python}
+N = 12 # Number of patients
+T = 18 # Number of intervals
+d = 5 # Length of each interval
+s = [0.0, 0.27, 0.28, 0.2, 0.15, 0.1] # Service times distribution
+q = 0.20 # Probability of a scheduled patient not showing up
+w = 0.8 # Weight for the waiting time in objective function
+num_schedules = 20000 # Number of schedules to sample
+```
 
 ### Variables
 
--   **Independent Variables**:
-    -   List the variables you will manipulate or control during the experiment.
--   **Dependent Variables**:
-    -   List the outcomes you will measure, which depend on the independent variables.
+-   **Independent Variables**: *A list schedules.*
+-   **Dependent Variables**: *A list with objective values for each schedules.*
 
 ### Data Collection
 
-**Data Collection Method**: - Explain how you will collect or generate the data needed for the experiment. Mention any tools, simulations, or datasets that will be used.
+*The data set has been generated in an earlier experiment using simulation in which random samples were drawn from the population of all possible schedules.*
+
+```{python}
+# Load the data from the pickle file
+with open('neighbors_and_objectives.pkl', 'rb') as f:
+    data = pickle.load(f)
+
+# Extract the variables from the loaded data
+neighbors_list = data['neighbors_list']
+objectives_list = data['objectives']
+rankings_list = data['rankings']
+
+print("Data loaded successfully.\n")
+for neigbors in neighbors_list[:2]: print(neigbors, "\n")
+for objectives in objectives_list[:2]: print(objectives, "\n")
+for rankings in rankings_list[:2]: print(rankings, "\n")
+
+```
 
 ### Sample Size and Selection
 
@@ -44,84 +95,28 @@ jupyter: python3
 
 ### Experimental Procedure
 
-**Step-by-Step Procedure**: - Provide a detailed, step-by-step description of the procedure you will follow in the experiment. This is the most detailed part of the methodology and should include any code blocks if applicable, explaining what each part of the code does.
+1.  *Train XGBoost regressor model to predict objective values from given schedules. Measure training time and get training accuracy.*
+
+2.  *Create validation set with pairs of neighboring schedules and calculate their objectives. Measure calculation time.*
+
+3.  *Predict for each schedule in the validation set the objectives using the regressor model. Measure prediction time.*
+
+4.  *Rank the schedules according to predictions and true values.*
+
+5.  *Calculate accuracy comparing true and predicted rankings.*
 
 ## Results
 
-**Results**: - Present your findings, using visual aids like charts or tables where appropriate. This section is factual; simply report what you found during the experiment.
+Present your findings, using visual aids like charts or tables where appropriate. This section is factual; simply report what you found during the experiment.
 
 ## Discussion
 
-**Discussion Points**: - Analyze your results in this section. Discuss whether your hypothesis was supported, what the results mean, and the implications for future work. Address any anomalies or unexpected findings, and consider the broader impact of your results.
+Analyze your results in this section. Discuss whether your hypothesis was supported, what the results mean, and the implications for future work. Address any anomalies or unexpected findings, and consider the broader impact of your results.
 
 ## Timeline
 
-**Timeline**: - Document the duration and key dates of the experiment. This helps in project management and reproducibility.
+Document the duration and key dates of the experiment. This helps in project management and reproducibility.
 
 ## References
 
-**References**: - Cite all sources that informed your experiment, including research papers, datasets, and tools. This section ensures that your work is properly grounded in existing research and that others can trace the origins of your methods and data.
-
----
-title: "{{experiment_title}}"
-jupyter: python3
----
-
-## Objective
-
-**Objective**: - Clearly define what you are aiming to accomplish with your experiment. This section sets the direction for your work.
-
-## Background
-
-**Background Information**: - Provide the necessary context for the experiment. Explain the theoretical or practical reasons behind your experiment, referencing relevant prior work. This section should help readers understand why the experiment is important.
-
-## Hypothesis
-
-**Hypothesis**: - State your predictions about the experiment’s outcome. This hypothesis will give a benchmark against which to measure your results.
-
-## Methodology
-
-### Tools and Materials
-
-**Tools and Materials**: - List the software, libraries, datasets, and any other materials you will use in this experiment. Include specific versions or configurations that are crucial for reproducibility.
-
-### Experimental Design
-
-**Design**: - Describe the experimental setup in detail. Include how you will manipulate variables and what data you will collect. This part of the methodology outlines the overall strategy of your experiment.
-
-### Variables
-
--   **Independent Variables**:
-    -   List the variables you will manipulate or control during the experiment.
--   **Dependent Variables**:
-    -   List the outcomes you will measure, which depend on the independent variables.
-
-### Data Collection
-
-**Data Collection Method**: - Explain how you will collect or generate the data needed for the experiment. Mention any tools, simulations, or datasets that will be used.
-
-### Sample Size and Selection
-
-**Sample Size**: - Indicate the number of samples you will use in the experiment. Justify the size based on the needs of the experiment, such as ensuring statistical significance.
-
-**Sample Selection**: - Describe how you will select your samples. Ensure that the sampling method is unbiased and representative of the population you are studying.
-
-### Experimental Procedure
-
-**Step-by-Step Procedure**: - Provide a detailed, step-by-step description of the procedure you will follow in the experiment. This is the most detailed part of the methodology and should include any code blocks if applicable, explaining what each part of the code does.
-
-## Results
-
-**Results**: - Present your findings, using visual aids like charts or tables where appropriate. This section is factual; simply report what you found during the experiment.
-
-## Discussion
-
-**Discussion Points**: - Analyze your results in this section. Discuss whether your hypothesis was supported, what the results mean, and the implications for future work. Address any anomalies or unexpected findings, and consider the broader impact of your results.
-
-## Timeline
-
-**Timeline**: - Document the duration and key dates of the experiment. This helps in project management and reproducibility.
-
-## References
-
-**References**: - Cite all sources that informed your experiment, including research papers, datasets, and tools. This section ensures that your work is properly grounded in existing research and that others can trace the origins of your methods and data.
+Cite all sources that informed your experiment, including research papers, datasets, and tools. This section ensures that your work is properly grounded in existing research and that others can trace the origins of your methods and data.
