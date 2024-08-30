@@ -10,6 +10,7 @@ book:
     - index.qmd
     - intro.qmd
     - xgboost-pairwise-ranking.qmd
+    - xgboost-objective-calc.qmd
 
 bibliography: references.bib
 
