@@ -1,5 +1,5 @@
 ---
-title: "{{experiment_title}}"
+title: "XGBoost regression model for objective calculation"
 jupyter: python3
 ---
 

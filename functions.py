@@ -142,8 +142,8 @@ def calculate_objective(schedule: list[int], s: list[float], d: int, q: float) -
     Calculate the objective value based on the given schedule and parameters.
 
     This function adjusts the service times distribution for no-shows, calculates 
-    the waiting times for all patients in the schedule, and sums the expected 
-    waiting times.
+    the waiting times for all patients in the schedule, sums the expected 
+    waiting times, and calculate the spillover time for the last interval (= overtime).
 
     Parameters:
     - schedule (list[int]): A list representing the schedule intervals.
