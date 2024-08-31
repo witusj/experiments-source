@@ -19,7 +19,7 @@ jupyter: python3
 
 1.  **Accuracy**: *The convergence of 'order' occurs at an exponential rate, while 'value' converges at a rate of* $1/t^{1/2}$. *In simpler terms, it is significantly easier to determine whether alternative A is superior to B than to quantify the exact difference between A and B. This makes intuitive sense when considering the scenario of holding two identical-looking packages and deciding which one is heavier, as opposed to estimating the precise weight difference between them.*
 
-2. **Efficiency**: *When evaluating a complex system is computationally expensive, it's more efficient to use a method that quickly identifies a subset of solutions with a high likelihood of containing the optimal or near-optimal solution. By focusing computational resources on refining the search within this promising subset, rather than across the entire solution space, we can significantly reduce the overall computational burden.*
+2.  **Efficiency**: *When evaluating a complex system is computationally expensive, it's more efficient to use a method that quickly identifies a subset of solutions with a high likelihood of containing the optimal or near-optimal solution. By focusing computational resources on refining the search within this promising subset, rather than across the entire solution space, we can significantly reduce the overall computational burden.*
 
 ## Hypothesis
 
@@ -43,6 +43,7 @@ import xgboost as xgb
 from xgboost.callback import TrainingCallback
 import plotly.graph_objects as go
 import pickle
+import functions
 ```
 
 ### Experimental Design
@@ -154,10 +155,10 @@ for i in range(5):
 print(f"\nProcessing time: {training_set_lab_time} seconds\n")
 
 # Saving neighbors_list and objectives to a pickle file
-with open('neighbors_and_objectives.pkl', 'wb') as f:
+file_path = 'neighbors_and_objectives.pkl'
+with open(file_path, 'wb') as f:
     pickle.dump({'neighbors_list': neighbors_list, 'objectives': objectives, 'rankings': rankings}, f)
-
-print("Data saved successfully to 'neighbors_and_objectives.pkl'")
+    print(f"Data saved successfully to '{file_path}'")
 ```
 
 **Step 4**: *Create training and test sets.*
@@ -398,6 +399,7 @@ fig.show()
 ```
 
 ## Hyperparameter Optimization
+
 *In the initial model the choice of hyperparameters was based on default values, examples from demo's or trial and error. To improve the model's performance, we applied a [hyperparameter optimization technique](https://optuna.org/){target="_blank"} to find the best set of hyperparameters. We used a grid search with cross-validation to find the optimal hyperparameters for the XGBoost model. The grid search was performed over a predefined set of hyperparameters, and the best hyperparameters were selected based on the model's performance on the validation set. The best hyperparameters were then used to train the final model.*
 
 ```{python}
@@ -503,9 +505,6 @@ fig.show()
 *The model demonstrates strong and consistent performance with high accuracies both for training as well as testing, good generalization and stability. Total training time for the final model was `{python} round(modeling_time, 4)` seconds. The evaluation of `{python} num_test_schedules` test schedules took `{python} round(prediction_time, 4)` seconds for the the XGBoost model and `{python} round(evaluation_time, 4)` for the conventional method, which is an improvement of `{python} int(evaluation_time/prediction_time)`X.*
 
 ```{python}
-import numpy as np
-import plotly.graph_objects as go
-
 training_time = round(modeling_time, 4)
 conventional_time = round(evaluation_time, 4)
 xgboost_time = round(prediction_time, 4)
@@ -541,15 +540,12 @@ fig.show()
 
 ```
 
-
 ## Discussion
 
 *In this experiment we used total waiting time as the objective value. In conventional appointment schedule problems the objective function also includes the physician's idle time and overtime.*
 
 ## Timeline
 
-*This experiment was started on 25-07-2024.*
+*This experiment was started on 25-07-2024. The completion date was 28-08-2024.**
 
 ## References
-
-
