@@ -97,6 +97,40 @@ for rankings in rankings_list[:2]: print(rankings, "\n")
 
 1.  *Train XGBoost regressor model to predict objective values from given schedules. Measure training time and get training accuracy.*
 
+```{python}
+
+    X = np.array([X[0] for X in neighbors_list])
+    y = np.array([y[0] for y in objectives_list])
+
+    # Split the dataset into training and test sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    #=========================================================================
+    # XGBoost regression: 
+    # Parameters: 
+    # n_estimators  "Number of gradient boosted trees. Equivalent to number 
+    #                of boosting rounds."
+    # learning_rate "Boosting learning rate (also known as “eta”)"
+    # max_depth     "Maximum depth of a tree. Increasing this value will make 
+    #                the model more complex and more likely to overfit." 
+    #=========================================================================
+    regressor=xgb.XGBRegressor(eval_metric='rmsle')
+
+    #=========================================================================
+    # exhaustively search for the optimal hyperparameters
+    #=========================================================================
+    from sklearn.model_selection import GridSearchCV
+    # set up our search grid
+    param_grid = {"max_depth":    [4, 5, 6],
+                  "n_estimators": [500, 600, 700],
+                  "learning_rate": [0.01, 0.015]}
+
+    # try out every combination of the above values
+    search = GridSearchCV(regressor, param_grid, cv=5).fit(X_train, y_train)
+
+    print("The best hyperparameters are ",search.best_params_)
+```
+
 2.  *Create validation set with pairs of neighboring schedules and calculate their objectives. Measure calculation time.*
 
 3.  *Predict for each schedule in the validation set the objectives using the regressor model. Measure prediction time.*
