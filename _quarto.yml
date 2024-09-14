@@ -8,9 +8,10 @@ book:
   date: "7/30/2024"
   chapters:
     - index.qmd
-    - intro.qmd
-    - xgboost-pairwise-ranking.qmd
-    - xgboost-objective-calc.qmd
+    - part: intro.qmd
+      chapters:
+        - xgboost-pairwise-ranking.qmd
+        - xgboost-objective-calc.qmd
 
 bibliography: references.bib
 

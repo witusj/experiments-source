@@ -9,13 +9,7 @@ jupyter: python3
 
 ## Background
 
-*To find optimal solutions for appointment scheduling problems one approach is to create local search neighborhoods and evaluate the schedules in that set. A better search method either (1) - creates smaller search neighborhoods or (2) - evaluates faster.*
-
-*One approach for speeding up evaluation is to create surrogate models, or metamodels. These are simplified representations of complex systems that are often created using machine learning techniques.*
-
-*In an earlier experiment we developed a ranking model that can rank two schedules according to preference. We established that a ranking model is significantly faster at choosing the best solution from a pair while retaining high accuracy levels.*
-
-*In this experiment we develop a Machine Learning model using XGBoost for evaluating a single schedule and let it compete with the conventional method as well as with the ranking model.*
+*In this experiment we'll develop a Machine Learning model using XGBoost for evaluating a single schedule and let it compete with the conventional method as well as with the ranking model.*
 
 ## Hypothesis
 
@@ -25,7 +19,7 @@ jupyter: python3
 
 ### Tools and Materials
 
-List the software, libraries, datasets, and any other materials you will use in this experiment. Include specific versions or configurations that are crucial for reproducibility.
+*We use packages from [Scikit-learn](https://scikit-learn.org/stable/index.html) to prepare training data and evaluate the model and the `XGBRegressor` interface from the [XGBoost](https://xgboost.readthedocs.io/en/latest/index.html) library.*
 
 ```{python}
 import time
@@ -33,8 +27,9 @@ import math
 import json
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split, cross_val_score, StratifiedKFold, GridSearchCV
+from sklearn.model_selection import train_test_split, cross_val_score, KFold, GridSearchCV
 from sklearn.base import clone
+from sklearn.metrics import mean_squared_log_error
 import xgboost as xgb
 from xgboost.callback import TrainingCallback
 import plotly.graph_objects as go
@@ -42,14 +37,6 @@ import pickle
 ```
 
 ### Experimental Design
-
-*We will create a random set of pairs of neighboring schedules with* $N = 12$ patients and $\ T = 18$ intervals of length $d = 5$.
-
-*A neighborhood consists of all schedules that differ by one patient only. Eg: (\[2,1,1\], \[1,1,2\]) are neighbors and (\[2,1,1\], \[1,0,3\]) are not.*
-
-*Service times will have a discrete distribution. The probability of a scheduled patient not showing up will be* $q = 0.20$.
-
-*The objective function will be the weighted average of the total waiting time of all patients and overtime. The model will be trained to predict the objective value of a given schedule. The prediction time will be recorded. Then the same schedules will be evaluated by computing the objective value using the conventional method.*
 
 ```{python}
 N = 12 # Number of patients
@@ -61,14 +48,38 @@ w = 0.8 # Weight for the waiting time in objective function
 num_schedules = 20000 # Number of schedules to sample
 ```
 
+*We will create a random set of pairs of neighboring schedules with* $N = `{python} N`$ patients and $\ T = `{python} T`$ intervals of length $d = `{python} d`$.
+
+*A neighborhood consists of all schedules that differ by one patient only. Eg: (\[2,1,1\], \[1,1,2\]) are neighbors and (\[2,1,1\], \[1,0,3\]) are not.*
+
+*Service times will have a discrete distribution. The probability of a scheduled patient not showing up will be* $q = `{python} q`$.
+
+*The objective function will be the weighted average of the total waiting time of all patients and overtime. First all the paired schedules will be evaluated by computing the objective value. Then an XGBoost regressor model for predicting objective values will be trained and evaluated.*
+
+*The model will be validated using a new sample of paired schedules the model has never seen (not in the training or the evaluation phase). All the objective values will be computed and the computation time will be recorded. Using the regressor model the objectives will be predicted and the prediciotn time will be measured. The predicted values will be compared to the actual values and the accuracy of the model will be assessed.*
+
+*In order to be able to compare the objective regressor to the ranking model in the other experiment we will also predict the rankings of the paired schedules and compare them to the actual rankings. An opaqueness measure will be calculated for each prediction to assess the confidence of the model and relate it to accuracy.*
+
 ### Variables
 
--   **Independent Variables**: *A list schedules.*
--   **Dependent Variables**: *A list with objective values for each schedules.*
+-   **Independent Variables**: *A list of tuples with pairs of neighboring schedules.*
+-   **Dependent Variables**:
+    1.  *A list of tuples with the objective values for each pair of neighboring schedules.*
+    2.  *Lists with rankings for each tuple of pairwise schedules. Eg: If the rank for (\[2,1,1\], \[1,1,2\]) equals 0 this means that the schedule with index 0 (\[2,1,1\]) has the lowest objective value.*
 
 ### Data Collection
 
-*The data set has been generated in an earlier experiment using simulation in which random samples were drawn from the population of all possible schedules.*
+*The data set will be generated using simulation in which random samples will be drawn from the population of all possible schedules. For each sample a random neighboring schedule will be created.*
+
+### Sample Size and Selection
+
+**Sample Size**: *The total population size equals* ${{N + T -1}\choose{N}} \approx$ `{python} round(math.comb(N + T - 1, N) / 1000000,0)` mln. For this experiment we will be using a relatively small sample of `{python} num_schedules` schedules.
+
+**Sample Selection**: *The samples will be drawn from a lexicographic order of possible schedules in order to accurately reflect the combinatorial nature of the problem and to ensure unbiased sampling from the entire combinatorial space.*
+
+### Data Collection
+
+*The data sample has been generated in an earlier experiment using simulation in which random samples were drawn from the population of all possible schedules.*
 
 ```{python}
 # Load the data from the pickle file
@@ -87,72 +98,183 @@ for rankings in rankings_list[:2]: print(rankings, "\n")
 
 ```
 
-### Sample Size and Selection
+*The experiment involves multiple steps, beginning with data preparation and concluding with model evaluation.The diagram below illustrates the sequence of steps.*
 
-**Sample Size**: - Indicate the number of samples you will use in the experiment. Justify the size based on the needs of the experiment, such as ensuring statistical significance.
+```{mermaid}
+graph TD
+    A["From population"] -->|"Sample"| B["Random subset"]
+    B --> |Create neighbors| C["Features: Schedule pairs"]
+    C --> |Calculate objectives| D["Labels: Objective values"]
+    D --> |Flatten lists| E["Features and labels"]
+    E --> |"Split"| F["Training set"]
+    E --> |"Split"| G["Test set"]
+    F --> |"Train"| H["Model"]
+    H["Model"] --> |"Apply"| G["Test set"]
+    G["Test set"] --> |"Evaluate"| I["Performance"]
+```
 
-**Sample Selection**: - Describe how you will select your samples. Ensure that the sampling method is unbiased and representative of the population you are studying.
-
-### Experimental Procedure
-
-1.  *Train XGBoost regressor model to predict objective values from given schedules. Measure training time and get training accuracy.*
+1.  *Prepare the data for training the XGBoost regressor model.*
 
 ```{python}
+# Transform the schedule and objective data into lists of NumPy arrays
+X = [item for tup in neighbors_list for item in tup]
+y = [item for tup in objectives_list for item in tup]
+print(f"Flattened neighbors list: {X[:3]}")
+print(f"Flattened objectives list: {y[:3]}")
+print(f"Number of schedules: {len(X)}")
+```
 
-X = np.array([X[0] for X in neighbors_list])
-y = np.array([y[0] for y in objectives_list])
+2.  *Run hyperparameter optimization for the XGBoost regressor model and record the time taken to find the optimal hyperparameters.*
 
+```{python}
+# #=========================================================================
+# # XGBoost regression: 
+# # Parameters: 
+# # n_estimators  "Number of gradient boosted trees. Equivalent to number 
+# #                of boosting rounds."
+# # learning_rate "Boosting learning rate (also known as “eta”)"
+# # max_depth     "Maximum depth of a tree. Increasing this value will make 
+# #                the model more complex and more likely to overfit." 
+# #=========================================================================
+# regressor=xgb.XGBRegressor(eval_metric='rmsle')
+# 
+# #=========================================================================
+# # exhaustively search for the optimal hyperparameters
+# #=========================================================================
+# from sklearn.model_selection import GridSearchCV
+# # set up our search grid
+# param_grid = {"max_depth":    [4, 5, 7],
+#               "n_estimators": [500, 700, 900],
+#               "learning_rate": [0.05, 0.1, 0.15]}
+# 
+# # try out every combination of the above values
+# start = time.time()
+# search = GridSearchCV(regressor, param_grid, cv=5, verbose=3, n_jobs=-1).fit(X_train, y_train)
+# end = time.time()
+# hyper_search_time = end - start
+# print(f'Hyperparameter optimization time: {hyper_search_time}')
+# 
+# print("The best hyperparameters are ",search.best_params_)
+```
+
+3.  *Train XGBoost regressor model to predict objective values from given schedules and measure training time.*
+
+```{python}
+class CustomCallback(TrainingCallback):
+    def __init__(self, period=10):
+        self.period = period
+
+    def after_iteration(self, model, epoch, evals_log):
+        if (epoch + 1) % self.period == 0:
+            print(f"Epoch {epoch}, Evaluation log: {evals_log['validation_0']['rmse'][epoch]}")
+        return False
+
+def fit_and_score(estimator, X_train, X_test, y_train, y_test):
+    """Fit the estimator on the train set and score it on both sets"""
+    estimator.fit(X_train, y_train, eval_set=[(X_test, y_test)], verbose=0)
+    
+    train_score = estimator.score(X_train, y_train)
+    test_score = estimator.score(X_test, y_test)
+
+    return estimator, train_score, test_score
+
+# Ensure that X and y are numpy arrays (convert if needed)
+X = np.array(X)  # Replace this with actual data
+y = np.array(y)  # Replace this with actual data
+
+# Check the shapes of X and y to ensure compatibility
+print(f"X shape: {X.shape}, y shape: {y.shape}")
+
+# Use KFold instead of StratifiedKFold, as stratification is not necessary for regression
+cv = KFold(n_splits=5, shuffle=True, random_state=94)
+
+# Load the best trial parameters from a JSON file
+with open("best_regressor_trial_params.json", "r") as f:
+    model_params = json.load(f)
+
+# Initialize the XGBRegressor with the loaded parameters
+regressor = xgb.XGBRegressor(
+    tree_method="hist",
+    max_depth=model_params["max_depth"],
+    min_child_weight=model_params["min_child_weight"],
+    gamma=model_params["gamma"],
+    subsample=model_params["subsample"],
+    colsample_bytree=model_params["colsample_bytree"],
+    learning_rate=model_params["learning_rate"],
+    n_estimators=model_params["n_estimators"],
+    callbacks=[CustomCallback(period=50)],
+)
+
+print("Params: ")
+for key, value in model_params.items():
+    print(f" {key}: {value}")
+
+start = time.time()
+results = []
+
+for train_idx, test_idx in cv.split(X, y):
+    X_train, X_test = X[train_idx], X[test_idx]
+    y_train, y_test = y[train_idx], y[test_idx]
+    
+    est, train_score, test_score = fit_and_score(
+        clone(regressor), X_train, X_test, y_train, y_test
+    )
+    results.append((est, train_score, test_score))
+end = time.time()
+training_time = end - start
+print(f"\nTraining time: {training_time} seconds\n")
+```
+
+```{python}
+# Print results
+for i, (est, train_score, test_score) in enumerate(results):
+    print(f"Fold {i+1} - Train Score: {train_score:.4f}, Test Score: {test_score:.4f}")
+```
+
+```{python}
+# regressor=xgb.XGBRegressor(learning_rate = search.best_params_["learning_rate"],
+#                        n_estimators  = search.best_params_["n_estimators"],
+#                        max_depth     = search.best_params_["max_depth"],
+#                        eval_metric='rmsle')
+# 
+# start = time.time()
+# regressor.fit(X_train, y_train)
+# end = time.time()
+# training_time = end - start
+# print(f"\nTraining time: {training_time} seconds\n")
+```
+
+4.  *Use the trained model to predict the objective values for the test set and calculate the Mean Absolute Percentage Error (MAPE) between the predicted and true values.*
+
+```{python}
 # Split the dataset into training and test sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-#=========================================================================
-# XGBoost regression: 
-# Parameters: 
-# n_estimators  "Number of gradient boosted trees. Equivalent to number 
-#                of boosting rounds."
-# learning_rate "Boosting learning rate (also known as “eta”)"
-# max_depth     "Maximum depth of a tree. Increasing this value will make 
-#                the model more complex and more likely to overfit." 
-#=========================================================================
-regressor=xgb.XGBRegressor(eval_metric='rmsle')
-
-#=========================================================================
-# exhaustively search for the optimal hyperparameters
-#=========================================================================
-from sklearn.model_selection import GridSearchCV
-# set up our search grid
-param_grid = {"max_depth":    [4, 5, 7],
-              "n_estimators": [500, 700, 900],
-              "learning_rate": [0.05, 0.1, 0.15]}
-
-# try out every combination of the above values
-start = time.time()
-search = GridSearchCV(regressor, param_grid, cv=5, verbose=3).fit(X_train, y_train)
-end = time.time()
-hyper_search_time = end - start
-print(f'Hyperparameter optimization time: {hyper_search_time}')
-
-print("The best hyperparameters are ",search.best_params_)
-
-regressor=xgb.XGBRegressor(learning_rate = search.best_params_["learning_rate"],
-                       n_estimators  = search.best_params_["n_estimators"],
-                       max_depth     = search.best_params_["max_depth"],
-                       eval_metric='rmsle')
+# Initialize the XGBRegressor with the loaded parameters
+regressor = xgb.XGBRegressor(
+    tree_method="hist",
+    max_depth=model_params["max_depth"],
+    min_child_weight=model_params["min_child_weight"],
+    gamma=model_params["gamma"],
+    subsample=model_params["subsample"],
+    colsample_bytree=model_params["colsample_bytree"],
+    learning_rate=model_params["learning_rate"],
+    n_estimators=model_params["n_estimators"],
+)
 
 regressor.fit(X_train, y_train)
-```
-
-```{python}
 predictions = regressor.predict(X_test)
 
-from sklearn.metrics import mean_squared_log_error
-RMSLE = np.sqrt( mean_squared_log_error(y_test, predictions) )
-print("The score is %.5f" % RMSLE )
+# Calculate Mean Absolute Percentage Error (MAPE)
+def mean_absolute_percentage_error(y_true, y_pred):
+    y_true, y_pred = np.array(y_true), np.array(y_pred)
+    return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
+
+mape = mean_absolute_percentage_error(y_test, predictions)
+print(f'MAPE: {mape:.2f}%')
 ```
 
 ```{python}
-import plotly.graph_objects as go
-
 # Create the scatter plot
 fig = go.Figure()
 
@@ -181,10 +303,11 @@ fig.update_layout(
 
 # Show the plot
 fig.show()
-
 ```
 
-2.  *Create validation set with pairs of neighboring schedules and calculate their objectives. Measure calculation time.*
+### Validation
+
+1.  *Create validation set with pairs of neighboring schedules and calculate their objectives. Measure calculation time.*
 
 ```{python}
 from functions import random_combination_with_replacement, create_neighbors_list, calculate_objective
@@ -196,18 +319,18 @@ test_neighbors = create_neighbors_list(test_schedules)
 
 print(f"Sampled: {len(test_schedules)} schedules\n")
 
-test_objectives_schedule_1 = [w * calculate_objective(test_neighbor[0], s, d, q)[0] + (1 - w) * calculate_objective(test_neighbor[0], s, d, q)[1] for test_neighbor in test_neighbors]
 # Start time measeurement for the evaluation
 start = time.time()
-test_objectives_schedule_2 = [w * calculate_objective(test_neighbor[1], s, d, q)[0] + (1 - w) * calculate_objective(test_neighbor[1], s, d, q)[1] for test_neighbor in test_neighbors]
-test_rankings = [0 if test_obj < test_objectives_schedule_2[i] else 1 for i, test_obj in enumerate(test_objectives_schedule_1)]
+test_objectives_schedule_1 = [w * calculate_objective(test_neighbor[0], s, d, q)[0] + (1 - w) * calculate_objective(test_neighbor[0], s, d, q)[1] for test_neighbor in test_neighbors]
 end = time.time()
 evaluation_time = end - start
+print(f"Evaluation time: {evaluation_time} seconds,\nNumber of evaluated schedules: {len(test_schedules)}\n")
+test_objectives_schedule_2 = [w * calculate_objective(test_neighbor[1], s, d, q)[0] + (1 - w) * calculate_objective(test_neighbor[1], s, d, q)[1] for test_neighbor in test_neighbors]
+test_rankings = [0 if test_obj < test_objectives_schedule_2[i] else 1 for i, test_obj in enumerate(test_objectives_schedule_1)]
 
 # Combine the objectives for each pair for later processing
 test_objectives = [[test_obj, test_objectives_schedule_2[i]] for i, test_obj in enumerate(test_objectives_schedule_1)]
 
-print(f"\nEvaluation time: {evaluation_time} seconds\n")
 
 for i in range(6):
     print(f"Neighbors: {test_neighbors[i]},\nObjectives: {test_objectives[i]}, Ranking: {test_rankings[i]}\n")
@@ -217,78 +340,79 @@ for i in range(6):
 
 ```{python}
 
-def predict_and_rank(neighbors):
+def predict_objective(neighbors):
     neighbors_array = [np.array(neighbor) for neighbor in neighbors] # Convert schedules to a NumPy array
     neighbors_array = np.vstack(neighbors_array)
     predictions = regressor.predict(neighbors_array)
-    ranking = np.argmin(predictions)
-    return predictions, ranking
+    return predictions
 
-predictions = [predict_and_rank(neighbors)[0] for neighbors in test_neighbors]
-pred_rankings = [predict_and_rank(neighbors)[1] for neighbors in test_neighbors]
-print(predictions[:10], pred_rankings[:10])
+# Start time measurement for the prediction
+start = time.time()
+predictions = regressor.predict(test_schedules)
+end = time.time()
+prediction_time = end - start
+print(f"Prediction time: {prediction_time},\nNumber of predicted schedules: {len(predictions)}\n")
+
+# Calculate the rankings based on the predicted objectives
+predictions = [predict_objective(neighbors) for neighbors in test_neighbors]
+pred_rankings = [np.argmin(objectives) for objectives in predictions]
+for i in range(6):
+    print(f"Neighbors: {test_neighbors[i]},\nPredictions: {predictions[i]}, Ranking: {pred_rankings[i]}\n")
 ```
 
-3.  *Calculate accuracy comparing true and predicted rankings.*
+3.  *Calculate opaqueness and accuracy comparing true and predicted rankings.*
+
+*Opaqueness is calculated using the formula for entropy:*
+
+$$
+H(X) = - \sum_{i} p(x_i) \log_b p(x_i)
+$$
+
+*Where in our case:*
+
+-   $H(X)$ *is the opaqueness of the random variable* $X$ *- the set of predicted normalized objective values for each of the paired schedules,*
+-   $p(x_i)$ *is the normalized outcome* $x_i$*,*
+-   $\log_b$ *is the logarithm with base* $b$ *(here* $\log_2$ *as we have two predicted values),*
+-   *The sum is taken over all possible outcomes of* $X$*.*
+
 ```{python}
+from functions import calculate_opaqueness
+
 errors = np.abs(np.array(test_rankings) - pred_rankings)
 accuracy = 1 - errors.mean()
 print(f"Accuracy = {accuracy}")
 
-def calculate_ambiguousness(vector: np.array) -> float:
-    # Ensure the vector is a numpy array
-    vector = np.array(vector)
-    
-    # Calculate the angle of the vector in radians
-    angle = np.arctan2(vector[1], vector[0])
-    
-    # Convert the angle to degrees
-    angle_degrees = np.degrees(angle)
-    
-    # Calculate the absolute difference from 45 degrees
-    difference_from_45 = np.abs(angle_degrees - 45)
-    
-    # Normalize the difference to a value between 0 and 1
-    ambiguousness = difference_from_45 / 45
-    
-    # Since ambiguousness must be between 0 and 1, we cap it at 1
-    ambiguousness = min(ambiguousness, 1)
-    
-    return ambiguousness
-
-# Example usage
-vector = np.array([1, 1])
-ambiguousness = [calculate_ambiguousness(vector) for vector in predictions]
+# Calculate the opaqueness of each prediction
+normalised_predictions = [prediction / np.sum(prediction) for prediction in predictions]
+opaqueness = [calculate_opaqueness(vector) for vector in normalised_predictions]
 ```
 
-
 ```{python}
-df = pd.DataFrame({"Ambiguousness": ambiguousness, "Error": errors}).sort_values(by="Ambiguousness")
+df = pd.DataFrame({"Opaqueness": opaqueness, "Error": errors}).sort_values(by="Opaqueness")
 df['Cumulative error rate'] = df['Error'].expanding().mean()
 # Calculate cumulative accuracy
 df['Cumulative accuracy'] = 1 - df['Cumulative error rate']
 df.head()
 
-
 # Create traces
 fig = go.Figure()
-fig.add_trace(go.Scatter(x=df["Ambiguousness"], y=df["Error"],
+fig.add_trace(go.Scatter(x=df["Opaqueness"], y=df["Error"],
                     mode="markers",
                     name="Error",
                     marker=dict(size=9)))
-fig.add_trace(go.Scatter(x=df["Ambiguousness"], y=df["Cumulative accuracy"],
+fig.add_trace(go.Scatter(x=df["Opaqueness"], y=df["Cumulative accuracy"],
                     mode="lines",
                     name="Cum. accuracy",
                     line = dict(width = 3, dash = 'dash')))
 fig.update_layout(
     title={
-        'text': f"Error vs Ambiguousness</br></br><sub>n={num_test_schedules}</sub>",
+        'text': f"Error vs Opaqueness</br></br><sub>n={num_test_schedules}</sub>",
         'y': 0.95,  # Keep the title slightly higher
         'x': 0.02,
         'xanchor': 'left',
         'yanchor': 'top'
     },
-    xaxis_title="Ambiguousness",
+    xaxis_title="Opaqueness",
     yaxis_title="Error / Accuracy",
     hoverlabel=dict(font=dict(color='white')),
     margin=dict(t=70)  # Add more space at the top of the chart
@@ -296,14 +420,50 @@ fig.update_layout(
 fig.show()
 ```
 
-
 ## Results
 
-Present your findings, using visual aids like charts or tables where appropriate. This section is factual; simply report what you found during the experiment.
+*We wanted to test whether an XGBoost classification model could be used to assess and rank the quality of pairs of schedules. For performance benchmarking we use the conventional calculation method utilizing Lindley recursions.*
+
+*We trained the XGBoost ranking model with a limited set of features (schedules) and labels (objectives). The total number of possible schedules is approximately `{python} round(math.comb(N + T - 1, N) / 1000000, 0)` million. For training and validation, we sampled `{python} num_schedules` schedules.*
+
+*The model demonstrates strong and consistent performance with high accuracies both for training as well as testing, good generalization and stability. Total training time for the final model was `{python} round(training_time, 4)` seconds. The evaluation of `{python} num_test_schedules` test schedules took `{python} round(prediction_time, 4)` seconds for the the XGBoost model and `{python} round(evaluation_time, 4)` for the conventional method, which is an improvement of `{python} int(evaluation_time/prediction_time)`X.*
 
 ## Discussion
 
-Analyze your results in this section. Discuss whether your hypothesis was supported, what the results mean, and the implications for future work. Address any anomalies or unexpected findings, and consider the broader impact of your results.
+```{python}
+training_time = round(training_time, 4)
+conventional_time = round(evaluation_time, 4)
+xgboost_time = round(prediction_time, 4)
+
+# Define time values for plotting
+time_values = np.linspace(0, training_time+0.1, 1000)  # 0 to 2 seconds
+
+# Calculate evaluations for method 1
+method1_evaluations = np.where(time_values >= training_time, (time_values - training_time) / xgboost_time * 1000, 0)
+
+# Calculate evaluations for method 2
+method2_evaluations = time_values / conventional_time * 1000
+
+# Create line chart
+fig = go.Figure()
+
+# Add method 1 trace
+fig.add_trace(go.Scatter(x=time_values, y=method1_evaluations, mode='lines', name='Ranking model'))
+
+# Add method 2 trace
+fig.add_trace(go.Scatter(x=time_values, y=method2_evaluations, mode='lines', name='Conventional method'))
+
+# Update layout
+fig.update_layout(
+    title="Speed comparison between XGBoost regressor model and conventional method",
+    xaxis_title="Time (seconds)",
+    yaxis_title="Number of Evaluations",
+    legend_title="Methods",
+    template="plotly_white"
+)
+
+fig.show()
+```
 
 ## Timeline
 

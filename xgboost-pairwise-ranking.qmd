@@ -9,17 +9,9 @@ jupyter: python3
 
 ## Background
 
-*To find optimal solutions for appointment scheduling problems one approach is to create local search neighborhoods and evaluate the schedules in that set. A better search method either (1) - creates smaller search neighborhoods or (2) - evaluates faster.*
+*In this experiment we develop a Machine Learning model using XGBoost that can evaluate two neighboring schedules and rank them according to preference. This ranking model can be applied to quickly guide the search process towards a 'good enough' solution.*
 
-*One approach for speeding up evaluation is to create surrogate models, or metamodels. These are simplified representations of complex systems that are often created using machine learning techniques.*
-
-*In this experiment we develop a Machine Learning model using XGBoost that can evaluate two neighboring schedules and rank them according to preference. This ranking model can be applied to quickly guide the search process towards a \`good enough' solution.*
-
-*The choice of using an ordinal model instead of a cardinal model is based on the following considerations [@ho_ordinal_2000]:*
-
-1.  **Accuracy**: *The convergence of 'order' occurs at an exponential rate, while 'value' converges at a rate of* $1/t^{1/2}$. *In simpler terms, it is significantly easier to determine whether alternative A is superior to B than to quantify the exact difference between A and B. This makes intuitive sense when considering the scenario of holding two identical-looking packages and deciding which one is heavier, as opposed to estimating the precise weight difference between them.*
-
-2.  **Efficiency**: *When evaluating a complex system is computationally expensive, it's more efficient to use a method that quickly identifies a subset of solutions with a high likelihood of containing the optimal or near-optimal solution. By focusing computational resources on refining the search within this promising subset, rather than across the entire solution space, we can significantly reduce the overall computational burden.*
+*The choice of using an ordinal model instead of a cardinal model is based on the consideration that it is significantly easier to determine whether alternative A is superior to B than to quantify the exact difference between A and B. This makes intuitive sense when considering the scenario of holding two identical-looking packages and deciding which one is heavier, as opposed to estimating the precise weight difference between them. [@ho_ordinal_2000].*
 
 ## Hypothesis
 
@@ -50,14 +42,6 @@ import functions
 
 *To compare an XGBoost Machine Learning model with a simple evaluation of each individual element of the pair, we will use a pairwise ranking approach. The objective is to rank two neighboring schedules according to preference.*
 
-*We will create a random set of pairs of neighboring schedules with* $N = 12$ patients and $\ T = 18$ intervals of length $d = 5$.
-
-*A neighborhood consists of all schedules that differ by one patient only. Eg: (\[2,1,1\], \[1,1,2\]) are neighbors and (\[2,1,1\], \[1,0,3\]) are not.*
-
-*Service times will have a discrete distribution. The probability of a scheduled patient not showing up will be* $q = 0.20$.
-
-*The objective function will be the weighted average of the total waiting time of all patients and overtime. The model will be trained to predict which of the two neighboring schedules has the lowest objective value. The prediction time will be recorded. Then the same schedules will be evaluated by computing the objective value and then ranked.*
-
 ```{python}
 N = 12 # Number of patients
 T = 18 # Number of intervals
@@ -68,10 +52,18 @@ w = 0.8 # Weight for the waiting time in objective function
 num_schedules = 20000 # Number of schedules to sample
 ```
 
+*We will create a random set of pairs of neighboring schedules with* $N = `{python} N`$ patients and $\ T = `{python} T`$ intervals of length $d = `{python} d`$.
+
+*A neighborhood consists of all schedules that differ by one patient only. Eg: (\[2,1,1\], \[1,1,2\]) are neighbors and (\[2,1,1\], \[1,0,3\]) are not.*
+
+*Service times will have a discrete distribution. The probability of a scheduled patient not showing up will be* $q = `{python} q`$.
+
+*The objective function will be the weighted average of the total waiting time of all patients and overtime. The model will be trained to predict which of the two neighboring schedules has the lowest objective value. The prediction time will be recorded. Then the same schedules will be evaluated by computing the objective value and then ranked.*
+
 ### Variables
 
 -   **Independent Variables**: *A list of tuples with pairs of neighboring schedules.*
--   **Dependent Variables**: *A list with rankings for each tuple of pairwise schedules. Eg: If the rank for (\[2,1,1\], \[1,1,2\]) is 1 this means that the schedule with index 1 (\[1,1,2\]) has the lowest objective value.*
+-   **Dependent Variables**: *A list with rankings for each tuple of pairwise schedules. Eg: If the rank for (\[2,1,1\], \[1,1,2\]) equals 0 this means that the schedule with index 0 (\[2,1,1\]) has the lowest objective value.*
 
 ### Data Collection
 
@@ -79,32 +71,25 @@ num_schedules = 20000 # Number of schedules to sample
 
 ### Sample Size and Selection
 
-**Sample Size**: *The total population size equals* ${{N + T -1}\choose{N}} \approx$ `{python} round(math.comb(N + T - 1, N) / 1000000,0)` mln. For this experiment we will be using a relatively small sample of `{python} num_schedules` schedules.
+**Sample Size**: *The total population size equals* ${{N + T -1}\choose{N}} \approx$ `{python} round(math.comb(N + T - 1, N) / 1000000,0)` mln. For this experiment we will be using a relatively small sample of `{python} num_schedules` pairs of schedules.
 
 **Sample Selection**: *The samples will be drawn from a lexicographic order of possible schedules in order to accurately reflect the combinatorial nature of the problem and to ensure unbiased sampling from the entire combinatorial space.*
 
 ### Experimental Procedure
 
-*The experiment involves multiple steps, beginning with data preparation and concluding with model evaluation. Each step offers several design options. The diagram below illustrates the sequence of steps and the available choices. We are adhering to the steps highlighted in red.*
+*The experiment involves multiple steps, beginning with data preparation and concluding with model evaluation.The diagram below illustrates the sequence of steps.*
 
 ```{mermaid}
 graph TD
-    A["Create features"]:::path -->|"option 1"| B["from population"]
-    A -->|"option 2"| C["random subset"]:::path
-    B --> D["Create pairs"]:::path
-    C --> D
-    D -->|"option 1"| E["random"]
-    D -->|"option 2"| F["neighbors"]:::path
-    E --> G["Create labels"]:::path
-    F --> G
-    G -->|"option 1"| H["objective"]
-    G -->|"option 2"| I["ranking"]:::path
-    H --> J["Split dataset"]:::path
-    I --> J
-    J --> K["Train XGBoost"]:::path
-    K --> L["Evaluate model"]:::path
-    
-    classDef path stroke:#f00
+    A["From population"] -->|"Sample"| B["Random subset"]
+    B --> |Create neighbors| C["Features: Schedule pairs"]
+    C --> |Calculate objectives| D["Objective values"]
+    D --> |Rank objectives| E["Labels: Rankings"]
+    E --> |"Split dataset"| F["Training set"]
+    E --> |"Split dataset"| G["Test set"]
+    F --> |"Train"| H["Model"]
+    H["Model"] --> |"Apply"| G["Test set"]
+    G["Test set"] --> |"Evaluate"| I["Performance"]
 ```
 
 **Step 1**: *Randomly select a subset of schedules.*
@@ -130,9 +115,9 @@ from functions import create_neighbors_list
 
 start = time.time()
 neighbors_list = create_neighbors_list(schedules)
+end = time.time()
 for neighbor in neighbors_list[:5]:
     print(f"Neighbor: {neighbor[1]}")
-end = time.time() 
 training_set_feat_time = end - start
 print(f"\nProcessing time: {training_set_feat_time} seconds\n")
 ```
@@ -255,7 +240,6 @@ results = []
 for train_idx, test_idx in cv.split(X, y):
     X_train, X_test = X[train_idx], X[test_idx]
     y_train, y_test = y[train_idx], y[test_idx]
-    
     est, train_score, test_score = fit_and_score(
         clone(clf), X_train, X_test, y_train, y_test
     )
@@ -304,6 +288,8 @@ print(f"Training accuracy: {training_accuracy * 100:.2f}%\n")
 
 print(f"\nTraining time: {modeling_time} seconds\n")
 ```
+
+### Validation
 
 *Generating test schedules and calculating their objectives and rankings allows us to create a new dataset for evaluating the model's performance on unseen data.*
 
@@ -356,6 +342,22 @@ print(f"test_rankings = {np.array(test_rankings)[:6]}, \ny_pred = {y_pred[:6]}, 
 
 *Calculating the ambiguousness of the predicted probabilities helps in understanding the model's confidence in its predictions. High ambiguousness indicates uncertain predictions, while low ambiguousness indicates confident predictions.*
 
+*Ambiguousness is calculated using the formula for entropy:*
+
+$$
+H(X) = - \sum_{i} p(x_i) \log_b p(x_i)
+$$
+
+*Where in our case:*
+
+-   $H(X)$ *is the ambiguousness of the random variable* $X$ *- the set of probability scores for the predicted rankings,*
+
+-   $p(x_i)$ *is probability score* $x_i$*,*
+
+-   $\log_b$ *is the logarithm with base* $b$ *(here* $\log_2$ *as we have two predicted values),*
+
+-   *The sum is taken over all possible outcomes of* $X$*.*
+
 *Calculating cumulative error rate and cumulative accuracy helps in understanding how the model's performance evolves over the dataset.*
 
 *Visualizing the relationship between ambiguousness and error provides insights into how uncertainty in the model's predictions correlates with its accuracy. This can help in identifying patterns and understanding the conditions under which the model performs well or poorly.*
@@ -364,6 +366,7 @@ print(f"test_rankings = {np.array(test_rankings)[:6]}, \ny_pred = {y_pred[:6]}, 
 from functions import calculate_ambiguousness
 
 errors = np.abs(y_pred - np.array(test_rankings))
+
 ambiguousness: np.ndarray = calculate_ambiguousness(y_pred_proba)
 df = pd.DataFrame({"Ambiguousness": ambiguousness, "Error": errors}).sort_values(by="Ambiguousness")
 df['Cumulative error rate'] = df['Error'].expanding().mean()
@@ -398,7 +401,7 @@ fig.update_layout(
 fig.show()
 ```
 
-## Hyperparameter Optimization
+### Hyperparameter Optimization
 
 *In the initial model the choice of hyperparameters was based on default values, examples from demo's or trial and error. To improve the model's performance, we applied a [hyperparameter optimization technique](https://optuna.org/){target="_blank"} to find the best set of hyperparameters. We used a grid search with cross-validation to find the optimal hyperparameters for the XGBoost model. The grid search was performed over a predefined set of hyperparameters, and the best hyperparameters were selected based on the model's performance on the validation set. The best hyperparameters were then used to train the final model.*
 
@@ -468,7 +471,9 @@ df['Cumulative error rate'] = df['Error'].expanding().mean()
 # Calculate cumulative accuracy
 df['Cumulative accuracy'] = 1 - df['Cumulative error rate']
 df.head()
+```
 
+```{python}
 
 # Create traces
 fig = go.Figure()
@@ -504,6 +509,8 @@ fig.show()
 
 *The model demonstrates strong and consistent performance with high accuracies both for training as well as testing, good generalization and stability. Total training time for the final model was `{python} round(modeling_time, 4)` seconds. The evaluation of `{python} num_test_schedules` test schedules took `{python} round(prediction_time, 4)` seconds for the the XGBoost model and `{python} round(evaluation_time, 4)` for the conventional method, which is an improvement of `{python} int(evaluation_time/prediction_time)`X.*
 
+## Discussion
+
 ```{python}
 training_time = round(modeling_time, 4)
 conventional_time = round(evaluation_time, 4)
@@ -537,15 +544,10 @@ fig.update_layout(
 )
 
 fig.show()
-
 ```
-
-## Discussion
-
-*In this experiment we used total waiting time as the objective value. In conventional appointment schedule problems the objective function also includes the physician's idle time and overtime.*
 
 ## Timeline
 
-*This experiment was started on 25-07-2024. The completion date was 28-08-2024.**
+\*This experiment was started on 25-07-2024. The completion date was 28-08-2024.\*\*
 
 ## References
