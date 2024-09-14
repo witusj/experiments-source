@@ -225,6 +225,34 @@ def calculate_ambiguousness(y_pred_proba: np.ndarray) -> np.ndarray:
     
     return ambiguousness
 
+def calculate_opaqueness(y_pred_proba: np.ndarray) -> np.ndarray:
+    """
+    Calculate the opaqueness for each array of normalized predicted objectives.
+
+    Parameters:
+    y_pred_proba (np.ndarray): Array of normalized predicted objectives.
+
+    Returns:
+    np.ndarray: Array of ambiguousness for each sample.
+    """
+    # Ensure probabilities are in numpy array
+    y_pred_proba = np.array(y_pred_proba)
+    
+    # Define a small bias term
+    epsilon = 1e-10
+    
+    # Add small bias term to probabilities that contain [0, 1] or [1, 0]
+    for i in range(len(y_pred_proba)):
+        if np.any(y_pred_proba[i] == 0):
+            print(f"{y_pred_proba[i]}: There is at least one zero in the array. Added bias term {epsilon}.")
+            # Add bias term
+            y_pred_proba[i] = np.clip(y_pred_proba[i], epsilon, 1 - epsilon)
+    
+    # Calculate ambiguousness for each array of probabilities
+    opaqueness = -np.sum(y_pred_proba * np.log2(y_pred_proba))
+    
+    return opaqueness
+
 def compare_json(json1, json2):
     """
     Compares two JSON objects and returns a dictionary with the differences.
