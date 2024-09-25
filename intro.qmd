@@ -17,18 +17,11 @@ jupyter: envpy39
 1.  ***Cardinal model** - Directly assessing the objective values from a given sample schedule using an XGBoost regressor.*
 2.  ***Ordinal model** - Predicting the preferred schedule from a pair of sampled schedules using an XGBoost classifier.*
 
-### Hypothesis:
+| **Model** | **Cardinal (Regressor)** | **Ordinal (Classifier)** |
+|----|----|----|
+| **Evaluation** (approx.) | $f: S \rightarrow Objective, \\ f(S) \in \mathbb{R}^{18}$ | $g: (S_0,S_1) \rightarrow \text{\{0, if } S_0 \text{ is better; otherwise 1\}}, \\ g(S_0, S_1) \in \mathbb{R}^{2 \times 18}$ |
+| **Comparison** (schedules $S_0, S_1$) | $f(S_0)$ vs. $f(S_1)$ | $g(S_0, S_1)$ |
+| **Parameter Tuning** | Optuna | Optuna |
+| **Training Data** | 40k rows | 20k rows |
 
--   **Ordinal performs better than Cardinal** in comparing schedules measured by accuracy.
-
-### Results:
-
-| **Model**                                       | **Cardinal (Regressor)**                                  | **Ordinal (Classifier)**                                                                                                     |
-|-------------------------------------------------|-----------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------|
-| **Speedup Factor** (regarding exact evaluation) | \~ 4x                                                     | \~ 165x                                                                                                                      |
-| **Evaluation** (approx.)                        | $f: S \rightarrow Objective, \\ f(S) \in \mathbb{R}^{18}$ | $g: (S_0,S_1) \rightarrow \text{\{0, if } S_0 \text{ is better; otherwise 1\}}, \\ g(S_0, S_1) \in \mathbb{R}^{2 \times 18}$ |
-| **Comparison** (schedules $S_0, S_1$)           | $f(S_0)$ vs. $f(S_1)$                                     | $g(S_0, S_1)$                                                                                                                |
-| **Parameter Tuning**                            | CVGridSearch                                              | Optuna                                                                                                                       |
-| **Training Data**                               | 40k rows                                                  | 20k rows                                                                                                                     |
-
-### 
+### Results
