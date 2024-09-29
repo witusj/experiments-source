@@ -2,8 +2,27 @@ import math
 import random
 import json
 import numpy as np
-from itertools import combinations_with_replacement
+from itertools import combinations_with_replacement, combinations
 from typing import List, Generator
+
+def get_v_star(T):
+    # Create an initial vector 'u' of zeros with length 'T'
+    u = np.zeros(T)
+    # Set the first element of vector 'u' to -1 and the last element to 1
+    u[0] = -1
+    u[-1] = 1
+    # Initialize the list 'v_star' with the initial vector 'u'
+    v_star = [u.copy()]
+    
+    # Loop over the length of 'u' minus one times to generate shifted versions of 'u'
+    for i in range(T - 1):
+        # Rotate 'u' by moving the last element to the front
+        u = np.roll(u, 1)
+        # Append the updated vector 'u' to the list 'v_star'
+        v_star.append(u.copy())
+    
+    # Return 'v_star' as a list of lists, which is easier to process in the main function
+    return np.array(v_star)
 
 def generate_all_schedules(N: int, T: int) -> list[list[int]]:
     def generate(current_schedule: list[int], remaining_patients: int, remaining_slots: int):
@@ -115,8 +134,43 @@ def random_combination_with_replacement(T: int, N: int, num_samples: int) -> Lis
         schedules.append(schedule)
 
     return schedules
-
-def create_neighbors_list(S: list[list[int]]) -> list[(list[int], list[int])]: # Create a set of pairs of schedules that are from the same neighborhood
+  
+def create_neighbors_list(s: list[int]) -> (list[int], list[int]):
+    """
+    Create a set of pairs of schedules that are from the same neighborhood.
+    
+    Parameters:
+      s (list[int]): A list of integers with |s| = T and sum N.
+      
+    Returns:
+      tuple(list[int], list[int]): A pair of schedules.
+    """
+    # Create a set of vectors of length T
+    v_star = get_v_star(len(s))
+    
+    # Choose a random element of t with probability P(t = i) = C(T,i)/((2^T)-2) for i in [1, ..., T-1]
+    i = random.choices(range(1, len(s)), weights=[math.comb(len(s), i) for i in range(1, len(s))])[0]
+    
+    # Create a list l of all subsets of t with length i
+    l = list(combinations(range(len(s)), i))
+    
+    # Choose a random element of l with probability 1/|l| and save it as j
+    j = random.choice(l)
+    
+    # Select all elements of V* with index in j and save them as V_j
+    # Sum the corresponding vectors in v_star
+    v_j = [v_star[idx] for idx in j]  # Convert NumPy arrays to lists
+    
+    # Sum the elements of v_j and s and save as s_p
+    s_p = s.copy()
+    for v in v_j:
+      s_p_temp = [int(x + y) for x, y in zip(s_p, v)]
+      if np.all(np.array(s_p_temp) >= 0):
+        s_p = s_p_temp
+        
+    return s, s_p
+    
+def create_neighbors_list_single_swap(S: list[list[int]]) -> list[(list[int], list[int])]: # Create a set of pairs of schedules that are from the same neighborhood
     neighbors_list = []
     
     # For each schedule in in the subset choose 2 random intervals i, j and swap 1 patient

@@ -263,6 +263,7 @@ regressor = xgb.XGBRegressor(
 )
 
 regressor.fit(X_train, y_train)
+regressor.save_model('models/regressor.json')
 predictions = regressor.predict(X_test)
 
 # Calculate Mean Absolute Percentage Error (MAPE)
@@ -315,7 +316,7 @@ from functions import random_combination_with_replacement, create_neighbors_list
 num_test_schedules = 1000
 
 test_schedules = random_combination_with_replacement(T, N, num_test_schedules)
-test_neighbors = create_neighbors_list(test_schedules)
+test_neighbors = [create_neighbors_list(test_schedule) for test_schedule in test_schedules] # This can be done in parellel to improve speed
 
 print(f"Sampled: {len(test_schedules)} schedules\n")
 
