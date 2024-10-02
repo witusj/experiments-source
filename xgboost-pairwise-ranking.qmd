@@ -54,7 +54,7 @@ num_schedules = 20000 # Number of schedules to sample
 
 *We will create a random set of pairs of neighboring schedules with* $N = `{python} N`$ patients and $T = `{python} T`$ intervals of length $d = `{python} d`$.
 
-*A neighborhood consists of all schedules that differ by one patient only. Eg: (\[2,1,1\], \[1,1,2\]) are neighbors and (\[2,1,1\], \[1,0,3\]) are not.*
+*A neighbor of a schedule x is considered a schedule x' where single patients have been shifted one interval to the left. Eg: (\[2,1,1,2\], \[1,2,0,3\]) are neighbors and (\[2,1,1,2\], \[2,1,3,0\]) are not, because \[1,2,0,3\] - \[2,1,1,2\] = \[-1, 1, -1, 1\] and \[2,1,3,0\] - \[2,1,1,2\] = \[0, 0, 2, -2\].*
 
 *Service times will have a discrete distribution. The probability of a scheduled patient not showing up will be* $q = `{python} q`$.
 

@@ -12,6 +12,7 @@ book:
       chapters:
         - xgboost-pairwise-ranking.qmd
         - xgboost-objective-calc.qmd
+        - local-search-regressor.qmd
 
 bibliography: references.bib
 
