@@ -1,23 +1,10 @@
 ---
-title: "Local search with trained XGBoost regressor model"
+title: "Local search with regressor model"
+author: "Witek ten Hove"
 jupyter: python3
 ---
 
-## Objective
 
-Test the working and performance of a [previously trained](xgboost-pairwise-ranking.qmd) XGBoost Regressor model in a local search application.
-
-## Background
-
-In previous experiments, we trained an XGBoost Regressor model to predict the objective values of neighboring schedules. In this experiment, we will use the trained models to perform a local search to find the best schedule.
-
-## Hypothesis
-
-The XGBoost Regressor model will be able to efficiently guide the local search algorithm to find a schedule with a lower objective value than the initial schedule.
-
-## Methodology
-
-### Tools and Materials
 
 ```{python}
 import numpy as np
@@ -26,25 +13,7 @@ import sys
 from math import comb  # Available in Python 3.8 and later
 import xgboost as xgb
 from functions import calculate_objective
-import pickle
 ```
-
-### Experimental Design
-
-We will use the trained XGBoost Regressor model to guide a local search algorithm to find the best schedule. The local search algorithm will start with an initial schedule and iteratively explore the neighborhood of the current schedule to find a better one. As an initial schedule, we will use the schedule with the lowest objective value from the training dataset that was used to train the XGBoost Regressor model.
-
-### Variables
-
--   **Independent Variables**:
-    -   The trained XGBoost Regressor model.
--   **Dependent Variables**:
-    -   Speed, accuracy, and convergence of the local search algorithm.
-
-### Data Collection
-
-We will use the training dataset to initialize the local search algorithm.
-
-### Sample Size and Selection
 
 ```{python}
 N = 12 # Number of patients
@@ -56,12 +25,7 @@ w = 0.8 # Weight for the waiting time in objective function
 num_schedules = 20000 # Number of schedules to sample
 ```
 
-### Experimental Procedure
-
-::: columns
-::: {.column width="50%"}
-
-The local search algorithm will follow the steps outlined below:
+Local search algorithm:
 
 1.  Start with the best solution found so far $\{x^*, C(x^*)\}$ from the training set.
 
@@ -106,52 +70,13 @@ The local search algorithm will follow the steps outlined below:
 8.  If $t \leq T$, set $t = t + 1$ and go to 7.
 
 9.  Return $x^*$.
-:::
-::: {.column width="45%"}
 
-![Local search algorithm](images/local_search_algorithm.png){#fig-local-search-algorithm}
-
-:::
-:::
-
-## Results
-
-### Load best solution from training dataset
-
-```{python}
-# Load the best solution from the training dataset
-with open('neighbors_and_objectives.pkl', 'rb') as f:
-    data = pickle.load(f)
-    
-print(f"The data has following keys: {[key for key in data.keys()]}")
-
-# Step 1: Flatten the objectives into a 1D array
-flattened_data = [value for sublist in data['objectives'] for value in sublist]
-
-# Step 2: Find the index of the minimum value
-min_index = np.argmin(flattened_data)
-
-# Step 3: Convert that index back to the original 2D structure
-row_index = min_index // 2  # Assuming each inner list has 2 values
-col_index = min_index % 2
-
-print(f"The minimum objective value is at index [{row_index}][{col_index}].\nThis is schedule: {data['neighbors_list'][row_index][col_index]} with objective value {data['objectives'][row_index][col_index]}.")
-
-# Set the initial schedule to the best solution from the training dataset
-initial_schedule = data['neighbors_list'][row_index][col_index]
-```
-### Set T to the length of the initial schedule
-
-```{python}
-T = len(initial_schedule)
-```
-
-### Define the vectors $V^*$
+## 3 Define the vectors $V^*$
 
 ```{python}
 def get_v_star(t):
     # Create an initial vector 'u' of zeros with length 't'
-    u = np.zeros(t, dtype=int)
+    u = np.zeros(t)
     # Set the first element of vector 'u' to -1
     u[0] = -1
     # Set the last element of vector 'u' to 1
@@ -174,82 +99,70 @@ def get_v_star(t):
 get_v_star(4)
 ```
 
-### Define the vectors $U_t$
+## 4 - Define the vectors $U_t$
 
 ```{python}
 def powerset(iterable, size=1):
     "powerset([1,2,3], 2) --> (1,2) (1,3) (2,3)"
     return [[i for i in item] for item in combinations(iterable, size)]
   
-x = initial_schedule
+x = [5, 0, 0, 3, 2, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0]
+# Set the value of 't'
+t = len(x)
 
 # Generate a matrix 'v_star' using the 'get_v_star' function
-v_star = get_v_star(T)
+v_star = get_v_star(t)
 
 # Generate all possible non-empty subsets (powerset) of the set {0, 1, 2, ..., t-1}
 # 'ids' will be a list of tuples, where each tuple is a subset of indices
 size = 2
-ids = powerset(range(T), size)
+ids = powerset(range(t), size)
 len(ids)
-ids[:T]
+ids[:t]
 ```
 
-### Define the neighborhood of $x$
+## 5 - Define the neighborhood of $x$
 
 ```{python}
-v_star = get_v_star(T)
+v_star = get_v_star(len(x))
 
-def get_neighborhood(x, v_star, ids, verbose=False):
-    x = np.array(x)
-    p = 50
-    if verbose:
-        print(f"Printing every {p}th result")
+def get_neighborhood(x, v_star, ids):
     # Initialize the list 'neighborhood' to store the vectors in the neighborhood of 'x'
     neighborhood = []
     # Loop over all possible non-empty subsets of indices
     for i in range(len(ids)):
         # Initialize the vector 'neighbor' to store the sum of vectors in 'v_star' corresponding to the indices in 'ids[i]'
-        neighbor = np.zeros(len(x), dtype=int)
+        neighbor = np.zeros(len(x))
         # Loop over all indices in 'ids[i]'
         for j in range(len(ids[i])):
-            if verbose:
-                print(f"v_star{[ids[i][j]]}: {v_star[ids[i][j]]}")
+            print(f"{v_star[ids[i][j]]}")
             # Add the vector in 'v_star' corresponding to the index 'ids[i][j]' to 'neighbor'
             neighbor += v_star[ids[i][j]]
         # Append the vector 'x' plus 'neighbor' to the list 'neighborhood'
-        x_n = x + neighbor
-        if i%p==0:
-            if verbose:
-                print(f"x, x', delta:\n{x},\n{x_n},\n{neighbor}\n----------------- ")
-        neighborhood.append(x_n)
+        print(f"{x},\n{neighbor}")
+        neighborhood.append(x + neighbor)
     
     # Convert the list 'neighborhood' into a NumPy array
     neighborhood = np.array(neighborhood)
-    if verbose:
-        print(f"Size of raw neighborhood: {len(neighborhood)}")
+    print(len(neighborhood))
     # Create a mask for rows with negative values
     mask = ~np.any(neighborhood < 0, axis=1)
+    print(mask.sum())
     # Filter out rows with negative values using the mask
-    if verbose:
-        print(f"filtered out: {len(neighborhood)-mask.sum()} schedules with negative values.")
     filtered_neighborhood = neighborhood[mask]
-    if verbose:
-        print(f"Size of filtered neighborhood: {len(filtered_neighborhood)}")
+    print(len(filtered_neighborhood))
     return filtered_neighborhood
 
 # Example of function call:
 # This will generate the neighborhood of the vector 'x' using the vectors in 'v_star' and the indices in 'ids'
 test_nh = get_neighborhood(x, v_star, ids)
-print(f"All neighborhoods with {size} patients switched:\n x = {np.array(x)}: \n {test_nh}")
+print(f"All neighborhoods with {size} patients switched of\n x = {x}: \n {test_nh}")
 ```
-### Local search algorithm
+
+## 6 - Local search algorithm
 
 ```{python}
-def predictor(x, regressor):
-    x_dmatrix = xgb.DMatrix(x.reshape(1, -1))
-    return regressor.predict(x_dmatrix)[0]
-
-def local_search(x, v_star, function, size=2):
+def local_search(x, v_star, regressor, size=2):
     # Initialize the best solution found so far 'x_star' to the input vector 'x'
     x_star = np.array(x).flatten()  # Keep as 1D array
 
@@ -283,7 +196,7 @@ def local_search(x, v_star, function, size=2):
     return x_star, C_star
 ```
 
-### Run the local search algorithm
+## 7 - Example of using the local search algorithm
 
 ```{python}
 # Example of using the local search algorithm with a random vector 'x' and a regressor model
@@ -291,18 +204,5 @@ def local_search(x, v_star, function, size=2):
 regressor = xgb.Booster()
 regressor.load_model("models/regressor.json")
 
-test = local_search(x, v_star, regressor, T)
-print(f"Best solution found: {test[0]}, with cost: {test[1]}")
+test = local_search(x, v_star, regressor, 10)
 ```
-
-## Discussion
-
-Analyze your results in this section. Discuss whether your hypothesis was supported, what the results mean, and the implications for future work. Address any anomalies or unexpected findings, and consider the broader impact of your results.
-
-## Timeline
-
-Document the duration and key dates of the experiment. This helps in project management and reproducibility.
-
-## References
-
-Cite all sources that informed your experiment, including research papers, datasets, and tools. This section ensures that your work is properly grounded in existing research and that others can trace the origins of your methods and data.s
