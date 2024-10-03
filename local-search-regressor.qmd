@@ -90,8 +90,8 @@ initial_schedule = data['neighbors_list'][row_index][col_index]
 N = sum(initial_schedule)
 T = len(initial_schedule)
 ```
-
-### Set T
+### Generate the neighborhood of $x^*$.
+#### Set T
 
 Set $T$ to the length of the vector $x^*$.
 
@@ -99,7 +99,7 @@ Set $T$ to the length of the vector $x^*$.
 T = len(initial_schedule)
 ```
 
-### Define $V^*$.
+#### Define $V^*$.
 
 Define the vectors $V^*$ as follows:
 
@@ -154,7 +154,7 @@ def get_v_star(t):
 get_v_star(4)
 ```
 
-### Define $U_t$.
+#### Define $U_t$.
 
 Define $U_t$ as the set of all possible subsets of $V^*$ such that each subset contains exactly $t$ elements, i.e.,
 
@@ -180,7 +180,7 @@ len(ids)
 ids[:T]
 ```
 
-### Define the neighborhood of $x$
+#### Define the neighborhood of $x$
 
 Define the neighborhood of $x$ as all vectors of the form $x + u_{tk}$ with $\forall\, u_{tk} \in U_t$.
 
