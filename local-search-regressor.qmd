@@ -139,6 +139,8 @@ print(f"The minimum objective value is at index [{row_index}][{col_index}].\nThi
 
 # Set the initial schedule to the best solution from the training dataset
 initial_schedule = data['neighbors_list'][row_index][col_index]
+N = sum(initial_schedule)
+T = len(initial_schedule)
 ```
 ### Set T to the length of the initial schedule
 
@@ -245,17 +247,13 @@ print(f"All neighborhoods with {size} patients switched:\n x = {np.array(x)}: \n
 ### Local search algorithm
 
 ```{python}
-def predictor(x, regressor):
-    x_dmatrix = xgb.DMatrix(x.reshape(1, -1))
-    return regressor.predict(x_dmatrix)[0]
-
-def local_search(x, v_star, function, size=2):
+def local_search_predicted(x, v_star, regressor, size=2):
     # Initialize the best solution found so far 'x_star' to the input vector 'x'
     x_star = np.array(x).flatten()  # Keep as 1D array
 
     # Initialize the best cost found so far 'C_star' to the cost of the input vector 'x'
     x_star_dmatrix = xgb.DMatrix(x_star.reshape(1, -1))
-    C_star = regressor.predict(x_star_dmatrix)[0]
+    c_star = regressor.predict(x_star_dmatrix)[0]
 
     # Set the value of 'T' to the length of the input vector 'x'
     T = len(x_star)
@@ -264,24 +262,62 @@ def local_search(x, v_star, function, size=2):
     for t in range(1, size):
         print(f'Running local search {t}')
 
-        # Generate the neighborhood of the current best solution 'x_star'
+        # Generate the neighborhood of the current best solution 'x_star' with 't' patients switched
         ids = powerset(range(T), t)
         neighborhood = get_neighborhood(x_star, v_star, ids)
+        print(f"Switching {t} patient(s). Size of neighborhood: {len(ids)}")
         
         for neighbor in neighborhood:
             neighbor_dmatrix = xgb.DMatrix(neighbor.reshape(1, -1))
             cost = regressor.predict(neighbor_dmatrix)
-            if cost < C_star:
+            if cost < c_star:
                 x_star = neighbor
-                C_star = cost
-                result = [int(x) for x in neighbor]
+                c_star = cost
+                result = [int(x) for x in x_star] # Convert x_star to list of integers
                 objectives = calculate_objective(result, s, d, q)
-                objective_values = w * objectives[0] + (1 - w) * objectives[1]
-                print(f"Found better solution: {x_star}, pred_cost: {C_star}, real_cost: {objective_values}")
+                objective_value = w * objectives[0] + (1 - w) * objectives[1]
+                print(f"Found better solution: {x_star}, pred_cost: {c_star}, real_cost: {objective_value}")
 
     # Return the best solution found 'x_star' as 1D array
-    return x_star, C_star
+    return x_star, c_star, objective_value
 ```
+
+```{python}
+def local_search(x, v_star, size=2):
+    # Initialize the best solution found so far 'x_star' to the input vector 'x'
+    x_star = np.array(x).flatten()  # Keep as 1D array
+
+    # Calculate initial objectives and cost
+    objectives_star = calculate_objective(x_star, s, d, q)
+    c_star = w * objectives_star[0] + (1 - w) * objectives_star[1]
+
+    # Set the value of 'T' to the length of the input vector 'x'
+    T = len(x_star)
+
+    # Loop over all possible values of 't'
+    for t in range(1, size):
+        print(f'Running local search {t}')
+
+        # Generate the neighborhood of the current best solution 'x_star' with 't' patients switched
+        ids = powerset(range(T), t)
+        neighborhood = get_neighborhood(x_star, v_star, ids)
+        print(f"Switching {t} patient(s). Size of neighborhood: {len(ids)}")
+
+        for neighbor in neighborhood:
+            # Calculate objectives for the neighbor
+            objectives = calculate_objective(neighbor, s, d, q)
+            cost = w * objectives[0] + (1 - w) * objectives[1]
+
+            # Compare scalar costs
+            if cost < c_star:
+                x_star = neighbor
+                c_star = cost
+                print(f"Found better solution: {x_star}, cost: {c_star}")
+
+    # Return the best solution found 'x_star' and its cost
+    return x_star, c_star
+```
+
 
 ### Run the local search algorithm
 
@@ -291,9 +327,19 @@ def local_search(x, v_star, function, size=2):
 regressor = xgb.Booster()
 regressor.load_model("models/regressor.json")
 
-test = local_search(x, v_star, regressor, T)
+test = local_search_predicted(initial_schedule, v_star, regressor, T)
+print(test)
+print(f"Best solution found: {test[0]}, with predicted cost: {test[1]} and real cost: {test[2]}")
+```
+
+```{python}
+# Computing optimun solution with real cost
+print(f"Initial schedule: {test[0]}")
+test = local_search(test[0], v_star, T)
+print(test)
 print(f"Best solution found: {test[0]}, with cost: {test[1]}")
 ```
+
 
 ## Discussion
 
