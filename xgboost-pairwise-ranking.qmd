@@ -155,10 +155,6 @@ with open(file_path, 'wb') as f:
 **Step 4**: *Create training and test sets.*
 
 ```{python}
-np.argmin([1,1])
-```
-
-```{python}
 # Prepare the dataset
 X = []
 for neighbors in neighbors_list:

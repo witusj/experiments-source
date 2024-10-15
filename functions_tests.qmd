@@ -115,3 +115,239 @@ test_create_neighbors_list()
 
 
 ```
+
+```{python}
+import numpy as np
+from functions import service_time_with_no_shows
+
+def compute_convolutions(probabilities, N, q=0.0):
+    """
+    Computes the k-fold convolution of a probability mass function for k in range 1 to N.
+
+    Parameters:
+    probabilities (list of floats): The PMF represented as a list where the index is the service time and the value is the probability.
+    N (int): The maximum number of convolutions to compute.
+
+    Returns:
+    dict: A dictionary where keys are k and values are the convoluted service times (PMFs).
+    """
+    convolutions = {}
+    result = probabilities.copy()
+    result = service_time_with_no_shows(result, q)
+    for k in range(1, N + 1):
+        if k == 1:
+            convolutions[k] = result
+        else:
+            result = np.convolve(result, probabilities)
+            convolutions[k] = result
+    return convolutions
+
+def test_compute_convolutions():
+    # Define a sample probability mass function
+    # probabilities = [0.1, 0.2, 0.3, 0.4]  # Service times 0, 1, 2, 3
+    probabilities = [0., 0.00599585, 0.00644478, 0.02427306, 0.04753406, 0.07355202, 0.16864656, 0.12338866, 0.10182152, 0.09778246, 0.07283463, 0.05794873, 0.05378825, 0.04945164, 0.04805953, 0.02797309, 0.02179657, 0.0183278, 0.0003808 ]
+    N = 20
+    convolutions = compute_convolutions(probabilities, N, q=0.0)
+
+    # Test that the probabilities sum to 1 for each convolution
+    for k in range(1, N + 1):
+        conv_pmf = convolutions[k]
+        total_prob = sum(conv_pmf)
+        assert abs(total_prob - 1.0) < 1e-6, f"Total probability at k={k} does not sum to 1."
+        print(f"Convolution at k={k}: {conv_pmf}")
+
+    print("All tests passed.")
+
+# Run the test function
+test_compute_convolutions()
+```
+
+```{python}
+from typing import List, Generator, Tuple
+
+def calculate_objective_serv_time_lookup(schedule: List[int], d: int, q: float, convolutions: dict) -> Tuple[float, float]:
+    """
+    Calculate the objective value based on the given schedule and parameters using precomputed convolutions.
+
+    This function uses precomputed convolutions of the service time distribution,
+    starting from the 1-fold convolution (key 1) which contains the adjusted service time distribution.
+
+    Parameters:
+    schedule (List[int]): A list representing the number of patients scheduled in each time slot.
+    d (int): Duration threshold or maximum allowed service time per slot.
+    q (float): No-show probability.
+    convolutions (dict): Precomputed convolutions of the service time distribution, with key 1 containing the adjusted service time distribution.
+
+    Returns:
+    Tuple[float, float]: 
+        - ewt (float): The sum of expected waiting times.
+        - esp (float): The expected spillover time (overtime).
+    """
+    sp = np.array([1], dtype=np.float64)  # Initial service process (no waiting time)
+    ewt = 0  # Total expected waiting time
+
+    for x in schedule:
+        if x == 0:
+            # No patients in this time slot
+            # Adjust sp for the duration d (service process moves ahead)
+            sp_new = []
+            sp_new.append(np.sum(sp[:d + 1]))
+            sp_new.extend(sp[d + 1:])
+            sp = np.array(sp_new)
+        else:
+            # Patients are scheduled in this time slot
+            wt_temp = [sp.copy()]
+            # Add expected waiting time for the first patient
+            ewt += np.dot(range(len(sp)), sp)
+            # For each additional patient
+            for i in range(1, x):
+                # The waiting time distribution for the ith patient is the convolution
+                # of the previous patient's waiting time with s (adjusted service time distribution)
+                conv_s = convolutions.get(1)  # Adjusted service time distribution
+                wt = np.convolve(wt_temp[i - 1], conv_s)
+                wt_temp.append(wt)
+                ewt += np.dot(range(len(wt)), wt)
+            # Update sp for the next time slot
+            conv_s = convolutions.get(1)  # Adjusted service time distribution
+            sp = np.convolve(wt_temp[-1], conv_s)
+            # Adjust sp for duration d
+            sp_new = []
+            sp_new.append(np.sum(sp[:d + 1]))
+            sp_new.extend(sp[d + 1:])
+            sp = np.array(sp_new)
+    # Expected spillover time
+    esp = np.dot(range(len(sp)), sp)
+    return ewt, esp
+  
+def calculate_objective(schedule: List[int], s: List[float], d: int, q: float) -> Tuple[float, float]:
+    """
+    Calculate the objective value based on the given schedule and parameters.
+
+    This function adjusts the service times distribution for no-shows, calculates 
+    the waiting times for all patients in the schedule, sums the expected 
+    waiting times, and calculates the spillover time for the last interval (overtime).
+
+    Parameters:
+    schedule (List[int]): A list representing the number of patients scheduled in each time slot.
+    s (List[float]): Service times probability distribution.
+    d (int): Duration threshold or maximum allowed service time per slot.
+    q (float): No-show probability.
+
+    Returns:
+    Tuple[float, float]: 
+        - ewt (float): The sum of expected waiting times.
+        - esp (float): The expected spillover time (overtime).
+    """
+    # Adjust the service time distribution for no-shows
+    s = service_time_with_no_shows(s, q)
+    # Initialize the service process (probability distribution of waiting times)
+    sp = np.array([1], dtype=np.float64)
+    wt_list = []
+    ewt = 0  # Expected waiting time
+    for x in schedule:
+        if x == 0:
+            # No patients in this time slot
+            wt_temp = [np.array(sp)]
+            wt_list.append([])
+            sp = []
+            sp.append(np.sum(wt_temp[-1][:d + 1]))
+            sp.extend(wt_temp[-1][d + 1:])
+        else:
+            # Patients are scheduled in this time slot
+            wt_temp = [np.array(sp)]
+            # Add expected waiting time for the first patient
+            ewt += np.dot(range(len(sp)), sp)
+            # For each additional patient
+            for i in range(x - 1):
+                # Convolve the waiting time with the service time distribution
+                wt = np.convolve(wt_temp[i], s)
+                wt_temp.append(wt)
+                # Add expected waiting time
+                ewt += np.dot(range(len(wt)), wt)
+            wt_list.append(wt_temp)
+            # Update the service process for the next time slot
+            sp = []
+            convolved = np.convolve(wt_temp[-1], s)
+            sp.append(np.sum(convolved[:d + 1]))
+            sp.extend(convolved[d + 1:])
+        # Calculate expected spillover time
+        esp = np.dot(range(len(sp)), sp)
+    return ewt, esp
+  
+def test_calculate_objective_serv_time_lookup_with_timing():
+    """
+    Test the calculate_objective_serv_time_lookup function by comparing its outputs
+    and execution time with the original calculate_objective function.
+
+    The test verifies that both functions produce the same expected waiting time (ewt)
+    and expected spillover time (esp) for a sample schedule and parameters, and compares
+    their execution times.
+    """
+    import numpy as np
+    import time
+
+    # Sample service time distribution (probabilities)
+    s = [0., 0.00599585, 0.00644478, 0.02427306, 0.04753406, 0.07355202, 0.16864656, 0.12338866, 0.10182152, 0.09778246, 0.07283463, 0.05794873, 0.05378825, 0.04945164, 0.04805953, 0.02797309, 0.02179657, 0.0183278, 0.0003808 ]
+
+    # Normalize the service time distribution to sum to 1
+    total_prob = sum(s)
+    s = [prob / total_prob for prob in s]
+
+    # Sample schedule: Number of patients scheduled in each time slot
+    schedule = [12, 2, 3, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]
+
+    # Parameters
+    d = 5       # Duration threshold or maximum allowed service time per slot
+    q = 0.1      # No-show probability
+
+    # Precompute convolutions for the maximum number of patients in any time slot
+    N = max(schedule)
+    convolutions = compute_convolutions(s, N, q)
+
+    # Measure execution time for the original function
+    start_time_original = time.time()
+    ewt_original, esp_original = calculate_objective(schedule, s, d, q)
+    end_time_original = time.time()
+    time_original = end_time_original - start_time_original
+
+    # Measure execution time for the lookup function
+    start_time_lookup = time.time()
+    ewt_lookup, esp_lookup = calculate_objective_serv_time_lookup(schedule, d, q, convolutions)
+    end_time_lookup = time.time()
+    time_lookup = end_time_lookup - start_time_lookup
+
+    # Define a tolerance for floating-point comparisons
+    tolerance = 1e-6
+
+    # Check if the expected waiting times are approximately equal
+    ewt_match = abs(ewt_original - ewt_lookup) < tolerance
+    # Check if the expected spillover times are approximately equal
+    esp_match = abs(esp_original - esp_lookup) < tolerance
+
+    # Print the results
+    print("Original Function Output:")
+    print(f"Expected Waiting Time (ewt): {ewt_original}")
+    print(f"Expected Spillover Time (esp): {esp_original}")
+    print(f"Execution Time: {time_original:.6f} seconds\n")
+
+    print("Lookup Function Output:")
+    print(f"Expected Waiting Time (ewt): {ewt_lookup}")
+    print(f"Expected Spillover Time (esp): {esp_lookup}")
+    print(f"Execution Time: {time_lookup:.6f} seconds\n")
+
+    # Assert that both outputs match within the defined tolerance
+    assert ewt_match, "Expected Waiting Times do not match."
+    assert esp_match, "Expected Spillover Times do not match."
+
+    print("Test passed: The outputs of both functions match within the defined tolerance.")
+
+    # Compare execution times
+    if time_lookup > 0:
+        speedup = time_original / time_lookup
+        print(f"The lookup function is {speedup:.2f} times faster than the original function.")
+    else:
+        print("Execution time for the lookup function is too small to measure speedup.")
+
+# Run the test function
+test_calculate_objective_serv_time_lookup_with_timing()
+```
