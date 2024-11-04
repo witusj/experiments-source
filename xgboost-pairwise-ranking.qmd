@@ -145,7 +145,7 @@ for i in range(5):
 print(f"\nProcessing time: {training_set_lab_time} seconds\n")
 
 # Saving neighbors_list and objectives to a pickle file
-file_path = 'neighbors_and_objectives.pkl'
+file_path = 'datasets/neighbors_and_objectives.pkl'
 with open(file_path, 'wb') as f:
     pickle.dump({'neighbors_list': neighbors_list, 'objectives': objectives, 'rankings': rankings}, f)
     print(f"Data saved successfully to '{file_path}'")

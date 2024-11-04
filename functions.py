@@ -533,34 +533,3 @@ def compute_convolutions(probabilities: List[float], N: int, q: float = 0.0) -> 
             result = np.convolve(result, probabilities)
             convolutions[k] = result
     return convolutions
-
-def test_compute_convolutions():
-    """
-    Test the compute_convolutions function with a sample probability mass function.
-
-    The function checks that the probabilities sum to 1 for each convolution.
-
-    Returns:
-    None
-    """
-    # Define a sample probability mass function
-    probabilities = [
-        0.0, 0.00599585, 0.00644478, 0.02427306, 0.04753406, 0.07355202,
-        0.16864656, 0.12338866, 0.10182152, 0.09778246, 0.07283463,
-        0.05794873, 0.05378825, 0.04945164, 0.04805953, 0.02797309,
-        0.02179657, 0.0183278, 0.0003808
-    ]
-    N = 20
-    convolutions = compute_convolutions(probabilities, N, q=0.0)
-
-    # Test that the probabilities sum to 1 for each convolution
-    for k in range(1, N + 1):
-        conv_pmf = convolutions[k]
-        total_prob = sum(conv_pmf)
-        assert abs(total_prob - 1.0) < 1e-6, f"Total probability at k={k} does not sum to 1."
-        print(f"Convolution at k={k}: {conv_pmf}")
-
-    print("All tests passed.")
-
-# Run the test function
-test_compute_convolutions()
