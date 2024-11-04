@@ -387,11 +387,11 @@ print(f"Accuracy = {accuracy}")
 normalised_predictions = [prediction / np.sum(prediction) for prediction in predictions]
 opaqueness = [calculate_opaqueness(vector) for vector in normalised_predictions]
 ```
+
 ```{python}
 predicted_values_left = [prediction[0] for prediction in predictions]
 
 ```
-
 
 ```{python}
 df = pd.DataFrame({"Opaqueness": opaqueness, "Error": errors, "Predictions": predictions}).sort_values(by="Opaqueness")
@@ -425,6 +425,7 @@ fig.update_layout(
     margin=dict(t=70)  # Add more space at the top of the chart
 )
 fig.show()
+fig.write_html("images/objective-results.html")
 ```
 
 ## Results
@@ -455,7 +456,7 @@ method2_evaluations = time_values / conventional_time * 1000
 fig = go.Figure()
 
 # Add method 1 trace
-fig.add_trace(go.Scatter(x=time_values, y=method1_evaluations, mode='lines', name='Ranking model'))
+fig.add_trace(go.Scatter(x=time_values, y=method1_evaluations, mode='lines', name='Regressor model'))
 
 # Add method 2 trace
 fig.add_trace(go.Scatter(x=time_values, y=method2_evaluations, mode='lines', name='Conventional method'))
@@ -470,6 +471,7 @@ fig.update_layout(
 )
 
 fig.show()
+fig.write_html("images/objectives-speed.html")
 ```
 
 ## Timeline

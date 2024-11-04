@@ -13,6 +13,9 @@ book:
         - xgboost-pairwise-ranking.qmd
         - xgboost-objective-calc.qmd
         - local-search-regressor.qmd
+        - xgboost-pairwise-ranking-large.qmd
+        - xgboost-objective-calc-large.qmd
+        - local-search-regressor-large.qmd
 
 bibliography: references.bib
 
