@@ -52,9 +52,9 @@ T = 20 # Number of intervals
 d = 5 # Length of each interval
 max_s = 20 # Maximum service time
 q = 0.20 # Probability of a scheduled patient not showing up
-w = 0.5 # Weight for the waiting time in objective function
+w = 0.1 # Weight for the waiting time in objective function
 l = 10
-num_schedules = 30000 # Number of schedules to sample
+num_schedules = 100000 # Number of schedules to sample
 
 # Create service time distribution
 def generate_weighted_list(max_s, l, i):
@@ -160,10 +160,11 @@ graph TD
 **Step 1**: *Randomly select a subset of schedules.*
 
 ```{python}
-from functions import random_combination_with_replacement
+from functions import create_random_schedules #random_combination_with_replacement
 
 start = time.time()
-schedules = random_combination_with_replacement(T, N, num_schedules)
+# schedules = random_combination_with_replacement(T, N, num_schedules)
+schedules = create_random_schedules(T, N, num_schedules)
 print(f"Sampled: {len(schedules):,} schedules\n")
 h = random.choices(range(len(schedules)), k=7)
 print(f"Sampled schedules: {h}")
@@ -423,7 +424,9 @@ print(f"\nTraining time: {modeling_time} seconds\n")
 ```{python}
 num_test_schedules = 1000
 
-test_schedules = random_combination_with_replacement(T, N, num_test_schedules)
+#test_schedules = random_combination_with_replacement(T, N, num_test_schedules)
+test_schedules = create_random_schedules(T, N, num_test_schedules)
+
 test_neighbors = [create_neighbors_list(test_schedule, v_star) for test_schedule in test_schedules] # This can be done in parellel to improve speed
 
 print(f"Sampled: {len(test_schedules)} schedules\n")

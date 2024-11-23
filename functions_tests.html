@@ -1,0 +1,1919 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.551">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Functions tests</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="functions_tests_files/libs/clipboard/clipboard.min.js"></script>
+<script src="functions_tests_files/libs/quarto-html/quarto.js"></script>
+<script src="functions_tests_files/libs/quarto-html/popper.min.js"></script>
+<script src="functions_tests_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="functions_tests_files/libs/quarto-html/anchor.min.js"></script>
+<link href="functions_tests_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="functions_tests_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="functions_tests_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="functions_tests_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="functions_tests_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Functions tests</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div id="5868778c" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> random</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> math</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> itertools <span class="im">import</span> combinations</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_v_star(T):</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create an initial vector 'u' of zeros with length 'T'</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    u <span class="op">=</span> np.zeros(T)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Set the first element of vector 'u' to -1 and the last element to 1</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    u[<span class="dv">0</span>] <span class="op">=</span> <span class="op">-</span><span class="dv">1</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    u[<span class="op">-</span><span class="dv">1</span>] <span class="op">=</span> <span class="dv">1</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Initialize the list 'v_star' with the initial vector 'u'</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    v_star <span class="op">=</span> [u.copy()]</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Loop over the length of 'u' minus one times to generate shifted versions of 'u'</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(T <span class="op">-</span> <span class="dv">1</span>):</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Rotate 'u' by moving the last element to the front</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>        u <span class="op">=</span> np.roll(u, <span class="dv">1</span>)</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Append the updated vector 'u' to the list 'v_star'</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>        v_star.append(u.copy())</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Return 'v_star' as a list of lists, which is easier to process in the main function</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.array(v_star)</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> create_neighbors_list(s: <span class="bu">list</span>[<span class="bu">int</span>]) <span class="op">-&gt;</span> (<span class="bu">list</span>[<span class="bu">int</span>], <span class="bu">list</span>[<span class="bu">int</span>]):</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="co">    Create a set of pairs of schedules that are from the same neighborhood.</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="co">    </span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="co">    Parameters:</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="co">      s (list[int]): A list of integers with |s| = T and sum N.</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="co">      </span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="co">    Returns:</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="co">      tuple(list[int], list[int]): A pair of schedules.</span></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create a set of vectors of length T</span></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>    v_star <span class="op">=</span> get_v_star(<span class="bu">len</span>(s))</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Choose a random element of t with probability P(t = i) = C(T,i)/((2^T)-2) for i in [1, ..., T-1]</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>    i <span class="op">=</span> random.choices(<span class="bu">range</span>(<span class="dv">1</span>, <span class="bu">len</span>(s)), weights<span class="op">=</span>[math.comb(<span class="bu">len</span>(s), i) <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, <span class="bu">len</span>(s))])[<span class="dv">0</span>]</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create a list l of all subsets of t with length i</span></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>    l <span class="op">=</span> <span class="bu">list</span>(combinations(<span class="bu">range</span>(<span class="bu">len</span>(s)), i))</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Choose a random element of l with probability 1/|l| and save it as j</span></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>    j <span class="op">=</span> random.choice(l)</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Select all elements of V* with index in j and save them as V_j</span></span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Sum the corresponding vectors in v_star</span></span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>    v_j <span class="op">=</span> [v_star[idx] <span class="cf">for</span> idx <span class="kw">in</span> j]  <span class="co"># Convert NumPy arrays to lists</span></span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Sum the elements of v_j and s and save as s_p</span></span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>    s_p <span class="op">=</span> s.copy()</span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> v <span class="kw">in</span> v_j:</span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>      s_p_temp <span class="op">=</span> [<span class="bu">int</span>(x <span class="op">+</span> y) <span class="cf">for</span> x, y <span class="kw">in</span> <span class="bu">zip</span>(s_p, v)]</span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> np.<span class="bu">all</span>(np.array(s_p_temp) <span class="op">&gt;=</span> <span class="dv">0</span>):</span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a>        s_p <span class="op">=</span> s_p_temp</span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> s, s_p</span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_create_neighbors_list():</span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Test case 1: Basic structure test (Length of s = 3)</span></span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a>    s <span class="op">=</span> [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">1</span>]</span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a>    s_original, s_p <span class="op">=</span> create_neighbors_list(s)</span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(s_original, s_p)</span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-66"><a href="#cb1-66" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">len</span>(s_original) <span class="op">==</span> <span class="bu">len</span>(s_p), <span class="st">"The two schedules must be of equal length"</span></span>
+<span id="cb1-67"><a href="#cb1-67" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-68"><a href="#cb1-68" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Test case 2: Edge case with minimum length (Length of s = 2)</span></span>
+<span id="cb1-69"><a href="#cb1-69" aria-hidden="true" tabindex="-1"></a>    s <span class="op">=</span> [<span class="dv">1</span>, <span class="dv">1</span>]</span>
+<span id="cb1-70"><a href="#cb1-70" aria-hidden="true" tabindex="-1"></a>    s_original, s_p <span class="op">=</span> create_neighbors_list(s)</span>
+<span id="cb1-71"><a href="#cb1-71" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-72"><a href="#cb1-72" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">len</span>(s_original) <span class="op">==</span> <span class="bu">len</span>(s_p), <span class="st">"The two schedules must be of equal length for small inputs"</span></span>
+<span id="cb1-73"><a href="#cb1-73" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">sum</span>(s_original) <span class="op">==</span> <span class="bu">sum</span>(s_p), <span class="st">"The sum of elements should remain the same before and after the transformation"</span></span>
+<span id="cb1-74"><a href="#cb1-74" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-75"><a href="#cb1-75" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Test case 3: Test for larger list and verify no mutation of original list</span></span>
+<span id="cb1-76"><a href="#cb1-76" aria-hidden="true" tabindex="-1"></a>    s <span class="op">=</span> [<span class="dv">3</span>, <span class="dv">2</span>, <span class="dv">4</span>, <span class="dv">1</span>]</span>
+<span id="cb1-77"><a href="#cb1-77" aria-hidden="true" tabindex="-1"></a>    s_original, s_p <span class="op">=</span> create_neighbors_list(s)</span>
+<span id="cb1-78"><a href="#cb1-78" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-79"><a href="#cb1-79" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">len</span>(s_original) <span class="op">==</span> <span class="bu">len</span>(s_p), <span class="st">"The schedules should have the same length"</span></span>
+<span id="cb1-80"><a href="#cb1-80" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">sum</span>(s_original) <span class="op">==</span> <span class="bu">sum</span>(s_p), <span class="st">"The sum should not change"</span></span>
+<span id="cb1-81"><a href="#cb1-81" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> s <span class="op">==</span> s_original, <span class="st">"The original list should not be modified"</span></span>
+<span id="cb1-82"><a href="#cb1-82" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-83"><a href="#cb1-83" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Test case 4: Test with all elements zero (edge case)</span></span>
+<span id="cb1-84"><a href="#cb1-84" aria-hidden="true" tabindex="-1"></a>    s <span class="op">=</span> [<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>]</span>
+<span id="cb1-85"><a href="#cb1-85" aria-hidden="true" tabindex="-1"></a>    s_original, s_p <span class="op">=</span> create_neighbors_list(s)</span>
+<span id="cb1-86"><a href="#cb1-86" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(s_original, s_p)</span>
+<span id="cb1-87"><a href="#cb1-87" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-88"><a href="#cb1-88" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">len</span>(s_original) <span class="op">==</span> <span class="bu">len</span>(s_p), <span class="st">"The schedules should have the same length"</span></span>
+<span id="cb1-89"><a href="#cb1-89" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> s_p <span class="op">==</span> s_original, <span class="st">"If all elements are zero, the result should be identical"</span></span>
+<span id="cb1-90"><a href="#cb1-90" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-91"><a href="#cb1-91" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Test case 5: Probabilistic test</span></span>
+<span id="cb1-92"><a href="#cb1-92" aria-hidden="true" tabindex="-1"></a>    s <span class="op">=</span> [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>]</span>
+<span id="cb1-93"><a href="#cb1-93" aria-hidden="true" tabindex="-1"></a>    counts <span class="op">=</span> [<span class="dv">0</span>] <span class="op">*</span> <span class="bu">len</span>(s)  <span class="co"># Corrected length of counts</span></span>
+<span id="cb1-94"><a href="#cb1-94" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1000</span>):</span>
+<span id="cb1-95"><a href="#cb1-95" aria-hidden="true" tabindex="-1"></a>        s_original, s_p <span class="op">=</span> create_neighbors_list(s)</span>
+<span id="cb1-96"><a href="#cb1-96" aria-hidden="true" tabindex="-1"></a>        diff <span class="op">=</span> [x <span class="op">-</span> y <span class="cf">for</span> x, y <span class="kw">in</span> <span class="bu">zip</span>(s_p, s_original)]</span>
+<span id="cb1-97"><a href="#cb1-97" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-98"><a href="#cb1-98" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Check if -1 is in diff to avoid ValueError</span></span>
+<span id="cb1-99"><a href="#cb1-99" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">-</span><span class="dv">1</span> <span class="kw">in</span> diff:</span>
+<span id="cb1-100"><a href="#cb1-100" aria-hidden="true" tabindex="-1"></a>            i <span class="op">=</span> diff.index(<span class="op">-</span><span class="dv">1</span>)</span>
+<span id="cb1-101"><a href="#cb1-101" aria-hidden="true" tabindex="-1"></a>            counts[i] <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb1-102"><a href="#cb1-102" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb1-103"><a href="#cb1-103" aria-hidden="true" tabindex="-1"></a>            <span class="co"># If no -1 in diff, the schedules are identical; you might want to handle this case</span></span>
+<span id="cb1-104"><a href="#cb1-104" aria-hidden="true" tabindex="-1"></a>            <span class="cf">pass</span></span>
+<span id="cb1-105"><a href="#cb1-105" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-106"><a href="#cb1-106" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Probabilistic distribution for i (should reflect C(T,i)/((2^T)-2)): "</span>, counts)</span>
+<span id="cb1-107"><a href="#cb1-107" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-108"><a href="#cb1-108" aria-hidden="true" tabindex="-1"></a>test_create_neighbors_list()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1, 2, 1] [1, 1, 2]
+[0, 0, 0, 0] [0, 0, 0, 0]
+Probabilistic distribution for i (should reflect C(T,i)/((2^T)-2)):  [314, 262, 217, 207]</code></pre>
+</div>
+</div>
+<div id="37490f08" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> functions <span class="im">import</span> service_time_with_no_shows</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> compute_convolutions(probabilities, N, q<span class="op">=</span><span class="fl">0.0</span>):</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co">    Computes the k-fold convolution of a probability mass function for k in range 1 to N.</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co">    Parameters:</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="co">    probabilities (list of floats): The PMF represented as a list where the index is the service time and the value is the probability.</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co">    N (int): The maximum number of convolutions to compute.</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co">    Returns:</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co">    dict: A dictionary where keys are k and values are the convoluted service times (PMFs).</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    convolutions <span class="op">=</span> {}</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    result <span class="op">=</span> probabilities.copy()</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    result <span class="op">=</span> service_time_with_no_shows(result, q)</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, N <span class="op">+</span> <span class="dv">1</span>):</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> k <span class="op">==</span> <span class="dv">1</span>:</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>            convolutions[k] <span class="op">=</span> result</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>            result <span class="op">=</span> np.convolve(result, probabilities)</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>            convolutions[k] <span class="op">=</span> result</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> convolutions</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_compute_convolutions():</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Define a sample probability mass function</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>    <span class="co"># probabilities = [0.1, 0.2, 0.3, 0.4]  # Service times 0, 1, 2, 3</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>    probabilities <span class="op">=</span> [<span class="fl">0.</span>, <span class="fl">0.00599585</span>, <span class="fl">0.00644478</span>, <span class="fl">0.02427306</span>, <span class="fl">0.04753406</span>, <span class="fl">0.07355202</span>, <span class="fl">0.16864656</span>, <span class="fl">0.12338866</span>, <span class="fl">0.10182152</span>, <span class="fl">0.09778246</span>, <span class="fl">0.07283463</span>, <span class="fl">0.05794873</span>, <span class="fl">0.05378825</span>, <span class="fl">0.04945164</span>, <span class="fl">0.04805953</span>, <span class="fl">0.02797309</span>, <span class="fl">0.02179657</span>, <span class="fl">0.0183278</span>, <span class="fl">0.0003808</span> ]</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>    N <span class="op">=</span> <span class="dv">20</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>    convolutions <span class="op">=</span> compute_convolutions(probabilities, N, q<span class="op">=</span><span class="fl">0.0</span>)</span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Test that the probabilities sum to 1 for each convolution</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, N <span class="op">+</span> <span class="dv">1</span>):</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>        conv_pmf <span class="op">=</span> convolutions[k]</span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>        total_prob <span class="op">=</span> <span class="bu">sum</span>(conv_pmf)</span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>        <span class="cf">assert</span> <span class="bu">abs</span>(total_prob <span class="op">-</span> <span class="fl">1.0</span>) <span class="op">&lt;</span> <span class="fl">1e-6</span>, <span class="ss">f"Total probability at k=</span><span class="sc">{</span>k<span class="sc">}</span><span class="ss"> does not sum to 1."</span></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"Convolution at k=</span><span class="sc">{</span>k<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>conv_pmf<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"All tests passed."</span>)</span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a><span class="co"># Run the test function</span></span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>test_compute_convolutions()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Convolution at k=1: [0.0, 0.00599585, 0.00644478, 0.02427306, 0.04753406, 0.07355202, 0.16864656, 0.12338866, 0.10182152, 0.09778246, 0.07283463, 0.05794873, 0.05378825, 0.04945164, 0.04805953, 0.02797309, 0.02179657, 0.0183278, 0.0003808]
+Convolution at k=2: [0.00000000e+00 0.00000000e+00 3.59502172e-05 7.72838683e-05
+ 3.32610443e-04 8.82883251e-04 2.08388832e-03 5.27800631e-03
+ 9.48357180e-03 1.79910271e-02 2.99178643e-02 4.36157419e-02
+ 6.26532822e-02 7.08202826e-02 7.49764079e-02 7.81568742e-02
+ 7.60583714e-02 7.30011459e-02 7.05386938e-02 6.70262150e-02
+ 6.30866822e-02 5.52932979e-02 4.76385973e-02 4.01495458e-02
+ 3.01858929e-02 2.30535773e-02 1.76944630e-02 1.30329276e-02
+ 9.60076381e-03 6.86027371e-03 4.73120425e-03 3.01874811e-03
+ 1.53706300e-03 8.20270657e-04 3.52508521e-04 1.39584525e-05
+ 1.45008640e-07]
+Convolution at k=3: [0.00000000e+00 0.00000000e+00 0.00000000e+00 2.15552110e-07
+ 6.95073723e-07 3.36498163e-06 1.10220124e-05 3.25759705e-05
+ 9.40642038e-05 2.25360713e-04 5.30387982e-04 1.13100585e-03
+ 2.23444618e-03 4.21305207e-03 7.21226669e-03 1.17354939e-02
+ 1.78305822e-02 2.51345041e-02 3.35226011e-02 4.13110857e-02
+ 4.81458980e-02 5.40406958e-02 5.83721302e-02 6.14309933e-02
+ 6.34459851e-02 6.41881592e-02 6.36893370e-02 6.15292962e-02
+ 5.80587298e-02 5.35544072e-02 4.79390228e-02 4.21026004e-02
+ 3.63909528e-02 3.08441160e-02 2.57339389e-02 2.10823922e-02
+ 1.69140942e-02 1.32473890e-02 1.00575947e-02 7.47827071e-03
+ 5.42363923e-03 3.80983563e-03 2.64414102e-03 1.79647932e-03
+ 1.18069527e-03 7.49469740e-04 4.51171940e-04 2.55732864e-04
+ 1.31216322e-04 5.77383695e-05 2.36999769e-05 7.08136746e-06
+ 3.93223661e-07 7.97306806e-09 5.52192901e-11]
+Convolution at k=4: [0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 1.29241812e-09 5.55674371e-09 2.98876316e-08 1.14890533e-07
+ 3.96927448e-07 1.28890523e-06 3.66341129e-06 9.95011711e-06
+ 2.49029271e-05 5.84716591e-05 1.30299085e-04 2.71709536e-04
+ 5.39573473e-04 1.01378306e-03 1.80514381e-03 3.06169161e-03
+ 4.91783890e-03 7.52320969e-03 1.09543274e-02 1.51731343e-02
+ 2.00811966e-02 2.53948692e-02 3.08521076e-02 3.62389987e-02
+ 4.12973406e-02 4.58653355e-02 4.98121271e-02 5.29695943e-02
+ 5.52111514e-02 5.63908201e-02 5.64646866e-02 5.54629466e-02
+ 5.34336185e-02 5.05738999e-02 4.70850256e-02 4.31308532e-02
+ 3.89019744e-02 3.45485392e-02 3.01993427e-02 2.59727432e-02
+ 2.19631889e-02 1.82724799e-02 1.49567974e-02 1.20413199e-02
+ 9.54560995e-03 7.44818904e-03 5.71368896e-03 4.30669778e-03
+ 3.18478987e-03 2.30830133e-03 1.63748640e-03 1.13576061e-03
+ 7.71421853e-04 5.11923751e-04 3.31227546e-04 2.09080152e-04
+ 1.27825421e-04 7.50935198e-05 4.20493934e-05 2.21501613e-05
+ 1.08448253e-05 4.78395439e-06 1.84214579e-06 6.22090322e-07
+ 1.47607450e-07 1.00788395e-08 2.97071958e-10 4.04819242e-12
+ 2.10275057e-14]
+Convolution at k=5: [0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 7.74914517e-12 4.16467522e-11 2.46384689e-10
+ 1.07779866e-09 4.20502047e-09 1.51222893e-08 4.86627236e-08
+ 1.47730649e-07 4.16580307e-07 1.10633669e-06 2.78642797e-06
+ 6.63482950e-06 1.50707133e-05 3.26095819e-05 6.73832736e-05
+ 1.33299717e-04 2.52232374e-04 4.57672719e-04 7.96292974e-04
+ 1.32910615e-03 2.13080907e-03 3.28064309e-03 4.85681674e-03
+ 6.92020318e-03 9.49886677e-03 1.25852891e-02 1.61241656e-02
+ 2.00269506e-02 2.41843950e-02 2.84648920e-02 3.27316111e-02
+ 3.68441330e-02 4.06546062e-02 4.40205362e-02 4.68066526e-02
+ 4.89030630e-02 5.02352775e-02 5.07632076e-02 5.04957180e-02
+ 4.94779727e-02 4.77782832e-02 4.54890045e-02 4.27136390e-02
+ 3.95621181e-02 3.61488827e-02 3.25864524e-02 2.89851119e-02
+ 2.54431144e-02 2.20425955e-02 1.88508566e-02 1.59144436e-02
+ 1.32616843e-02 1.09069270e-02 8.85127363e-03 7.08617197e-03
+ 5.59526677e-03 4.35650960e-03 3.34446747e-03 2.53082021e-03
+ 1.88701213e-03 1.38583979e-03 1.00173976e-03 7.12071200e-04
+ 4.97334870e-04 3.40962815e-04 2.29254941e-04 1.51011304e-04
+ 9.73458262e-05 6.13443299e-05 3.76941439e-05 2.25185921e-05
+ 1.30329735e-05 7.26110710e-06 3.86578989e-06 1.94921939e-06
+ 9.20019801e-07 4.00757311e-07 1.56971892e-07 5.37719752e-08
+ 1.56167870e-08 3.17040156e-09 2.47521273e-10 9.37152244e-12
+ 1.87777790e-13 1.92693959e-15 8.00727416e-18]
+Convolution at k=6: [0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 4.64627121e-14 2.99649215e-13
+ 1.93378526e-12 9.42945669e-12 4.06889621e-11 1.60014616e-10
+ 5.68636909e-10 1.89309125e-09 5.87631571e-09 1.72013583e-08
+ 4.77567501e-08 1.25888222e-07 3.16950931e-07 7.62821883e-07
+ 1.75952086e-06 3.89743362e-06 8.29637915e-06 1.70015036e-05
+ 3.35619835e-05 6.38748116e-05 1.17300090e-04 2.07925841e-04
+ 3.56013064e-04 5.89062981e-04 9.42319416e-04 1.45832052e-03
+ 2.18454806e-03 3.17007851e-03 4.46040985e-03 6.09151749e-03
+ 8.08521008e-03 1.04446567e-02 1.31529711e-02 1.61736701e-02
+ 1.94509141e-02 2.29120561e-02 2.64699242e-02 3.00249602e-02
+ 3.34698262e-02 3.66941146e-02 3.95911000e-02 4.20646828e-02
+ 4.40345740e-02 4.54418399e-02 4.62508475e-02 4.64488800e-02
+ 4.60459705e-02 4.50724443e-02 4.35762928e-02 4.16206025e-02
+ 3.92798867e-02 3.66366779e-02 3.37769283e-02 3.07856107e-02
+ 2.77434115e-02 2.47231174e-02 2.17875148e-02 1.89885442e-02
+ 1.63666596e-02 1.39511268e-02 1.17606233e-02 9.80413512e-03
+ 8.08222466e-03 6.58822293e-03 5.30983872e-03 4.23077376e-03
+ 3.33205148e-03 2.59339567e-03 1.99431412e-03 1.51487458e-03
+ 1.13632485e-03 8.41477288e-04 6.14969585e-04 4.43379221e-04
+ 3.15210605e-04 2.20845603e-04 1.52392875e-04 1.03489586e-04
+ 6.91071208e-05 4.53369342e-05 2.91910197e-05 1.84258141e-05
+ 1.13862761e-05 6.87695294e-06 4.05090785e-06 2.32039890e-06
+ 1.28786438e-06 6.89472002e-07 3.53896655e-07 1.72914642e-07
+ 7.97064843e-08 3.42724319e-08 1.35421482e-08 4.80357567e-09
+ 1.48674463e-09 3.83185312e-10 6.97197436e-11 5.95342207e-12
+ 2.70162689e-13 7.05245419e-15 1.06996877e-16 8.80534316e-19
+ 3.04917000e-21]
+Convolution at k=7: [0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 2.78583452e-16
+ 2.09609370e-15 1.46536518e-14 7.84823932e-14 3.69335543e-13
+ 1.57233306e-12 6.07508818e-12 2.18949730e-11 7.36994283e-11
+ 2.34013590e-10 7.04828351e-10 2.01955248e-09 5.53129543e-09
+ 1.45091874e-08 3.65450069e-08 8.85628282e-08 2.06774599e-07
+ 4.65862691e-07 1.01383497e-06 2.13334710e-06 4.34431186e-06
+ 8.56688760e-06 1.63705698e-05 3.03295544e-05 5.45053304e-05
+ 9.50574423e-05 1.60945734e-04 2.64672574e-04 4.22923037e-04
+ 6.56955623e-04 9.92575659e-04 1.45947268e-03 2.08991035e-03
+ 2.91672064e-03 3.97075445e-03 5.27816990e-03 6.85770809e-03
+ 8.71837258e-03 1.08576717e-02 1.32603191e-02 1.58976561e-02
+ 1.87276891e-02 2.16957514e-02 2.47361104e-02 2.77743555e-02
+ 3.07306418e-02 3.35235475e-02 3.60740467e-02 3.83094899e-02
+ 4.01670071e-02 4.15961287e-02 4.25607912e-02 4.30404565e-02
+ 4.30304903e-02 4.25418969e-02 4.16002789e-02 4.02442038e-02
+ 3.85229250e-02 3.64936667e-02 3.42187810e-02 3.17628063e-02
+ 2.91897621e-02 2.65608457e-02 2.39324776e-02 2.13548259e-02
+ 1.88707697e-02 1.65152750e-02 1.43151968e-02 1.22894167e-02
+ 1.04493333e-02 8.79962135e-03 7.33913656e-03 6.06194635e-03
+ 4.95837976e-03 4.01602527e-03 3.22065954e-03 2.55706411e-03
+ 2.00972546e-03 1.56340821e-03 1.20359618e-03 9.16819580e-04
+ 6.90864921e-04 5.14882669e-04 3.79418208e-04 2.76376326e-04
+ 1.98939787e-04 1.41459301e-04 9.93258837e-05 6.88374431e-05
+ 4.70654754e-05 3.17283117e-05 2.10755252e-05 1.37842354e-05
+ 8.86961639e-06 5.60982081e-06 3.48390902e-06 2.12197473e-06
+ 1.26577644e-06 7.38198072e-07 4.20035882e-07 2.32584392e-07
+ 1.24927332e-07 6.48389412e-08 3.23635024e-08 1.54439773e-08
+ 6.99617962e-09 2.98201894e-09 1.18255061e-09 4.29738906e-10
+ 1.39980688e-10 3.96802262e-11 9.28862145e-12 1.56139223e-12
+ 1.41753492e-13 7.37530566e-15 2.34490864e-16 4.66586984e-18
+ 5.69491291e-20 3.91192046e-22 1.16112394e-24]
+Convolution at k=8: [0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 1.67034459e-18 1.43632725e-17 1.08132034e-16 6.29129030e-16
+ 3.19609746e-15 1.46104690e-14 6.07198274e-14 2.34683760e-13
+ 8.47649278e-13 2.88765517e-12 9.33104704e-12 2.87103109e-11
+ 8.44781005e-11 2.38314559e-10 6.46251099e-10 1.68812817e-09
+ 4.25478147e-09 1.03635975e-08 2.44248056e-08 5.57603264e-08
+ 1.23427406e-07 2.65116590e-07 5.52998715e-07 1.12083382e-06
+ 2.20866531e-06 4.23357282e-06 7.89698131e-06 1.43406971e-05
+ 2.53627493e-05 4.37012555e-05 7.33865347e-05 1.20147810e-04
+ 1.91845978e-04 2.98880266e-04 4.54500459e-04 6.74945977e-04
+ 9.79326801e-04 1.38918947e-03 1.92773449e-03 2.61869612e-03
+ 3.48495343e-03 4.54695361e-03 5.82106521e-03 7.31797692e-03
+ 9.04122895e-03 1.09859910e-02 1.31381732e-02 1.54739538e-02
+ 1.79598258e-02 2.05532073e-02 2.32036370e-02 2.58545130e-02
+ 2.84452567e-02 3.09137755e-02 3.31990437e-02 3.52436328e-02
+ 3.69960775e-02 3.84129394e-02 3.94604832e-02 4.01159010e-02
+ 4.03680135e-02 4.02174297e-02 3.96761543e-02 3.87666841e-02
+ 3.75206820e-02 3.59773158e-02 3.41813880e-02 3.21813825e-02
+ 3.00275192e-02 2.77699136e-02 2.54569147e-02 2.31336720e-02
+ 2.08409797e-02 1.86144171e-02 1.64837985e-02 1.44729243e-02
+ 1.25996000e-02 1.08758906e-02 9.30856184e-03 7.89965537e-03
+ 6.64715406e-03 5.54569180e-03 4.58727129e-03 3.76195802e-03
+ 3.05852397e-03 2.46502392e-03 1.96929025e-03 1.55933945e-03
+ 1.22369123e-03 9.51603322e-04 7.33229777e-04 5.59713042e-04
+ 4.23220278e-04 3.16935176e-04 2.35015533e-04 1.72526262e-04
+ 1.25356670e-04 9.01289702e-05 6.41041864e-05 4.50901807e-05
+ 3.13549787e-05 2.15476578e-05 1.46280019e-05 9.80534809e-06
+ 6.48653071e-06 4.23238576e-06 2.72209401e-06 1.72446834e-06
+ 1.07520879e-06 6.59207308e-07 3.97004430e-07 2.34583564e-07
+ 1.35808801e-07 7.69089874e-08 4.25206693e-08 2.28975750e-08
+ 1.19766529e-08 6.06436076e-09 2.96080394e-09 1.38716916e-09
+ 6.20044601e-10 2.62559310e-10 1.04405492e-10 3.85507405e-11
+ 1.30192512e-11 3.93636725e-12 1.03388316e-12 2.23714809e-13
+ 3.54615448e-14 3.36015069e-15 1.94397229e-16 7.20952992e-18
+ 1.76061545e-19 2.82907461e-21 2.88812264e-23 1.70246778e-25
+ 4.42155995e-28]
+Convolution at k=9: [0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 1.00151356e-20 9.68850308e-20 7.81455962e-19
+ 4.89708930e-18 2.66482164e-17 1.29949312e-16 5.76294106e-16
+ 2.37147098e-15 9.11936201e-15 3.30634173e-14 1.13688583e-13
+ 3.72363870e-13 1.16657489e-12 3.50596117e-12 1.01349924e-11
+ 2.82433091e-11 7.60104718e-11 1.97884630e-10 4.99017987e-10
+ 1.22042151e-09 2.89765717e-09 6.68527487e-09 1.49995688e-08
+ 3.27513905e-08 6.96376578e-08 1.44265965e-07 2.91341805e-07
+ 5.73792787e-07 1.10254110e-06 2.06766993e-06 3.78583702e-06
+ 6.76977904e-06 1.18263584e-05 2.01892376e-05 3.36906195e-05
+ 5.49729153e-05 8.77353406e-05 1.37002901e-04 2.09395827e-04
+ 3.13368552e-04 4.59380324e-04 6.59955579e-04 9.29595253e-04
+ 1.28450798e-03 1.74214368e-03 2.32053048e-03 3.03743226e-03
+ 3.90936132e-03 4.95049456e-03 6.17154967e-03 7.57868863e-03
+ 9.17252017e-03 1.09472752e-02 1.28902294e-02 1.49814365e-02
+ 1.71938176e-02 1.94936306e-02 2.18413112e-02 2.41926520e-02
+ 2.65002618e-02 2.87152271e-02 3.07888934e-02 3.26746733e-02
+ 3.43297909e-02 3.57168767e-02 3.68053320e-02 3.75723944e-02
+ 3.80038558e-02 3.80944022e-02 3.78475729e-02 3.72753570e-02
+ 3.63974653e-02 3.52403344e-02 3.38359236e-02 3.22203754e-02
+ 3.04326079e-02 2.85129071e-02 2.65015797e-02 2.44377216e-02
+ 2.23581454e-02 2.02964992e-02 1.82825934e-02 1.63419426e-02
+ 1.44955157e-02 1.27596784e-02 1.11463051e-02 9.66303421e-03
+ 8.31363416e-03 7.09845255e-03 6.01491568e-03 5.05805189e-03
+ 4.22101349e-03 3.49557626e-03 2.87260056e-03 2.34244220e-03
+ 1.89530592e-03 1.52153831e-03 1.21186022e-03 9.57541436e-04
+ 7.50522287e-04 5.83488319e-04 4.49904881e-04 3.44018844e-04
+ 2.60834558e-04 1.96070772e-04 1.46104498e-04 1.07907034e-04
+ 7.89764412e-05 5.72698962e-05 4.11384800e-05 2.92662457e-05
+ 2.06147393e-05 1.43736257e-05 9.91762200e-06 6.76962966e-06
+ 4.56971098e-06 3.04940100e-06 2.01076366e-06 1.30956730e-06
+ 8.41962812e-07 5.34084451e-07 3.34044917e-07 2.05860070e-07
+ 1.24902119e-07 7.45440936e-08 4.37186256e-08 2.51670311e-08
+ 1.42015853e-08 7.84362358e-09 4.23249712e-09 2.22673656e-09
+ 1.13937949e-09 5.65381647e-10 2.71150947e-10 1.25179485e-10
+ 5.53643768e-11 2.33240494e-11 9.29417822e-12 3.47262802e-12
+ 1.20306326e-12 3.80712369e-13 1.07777101e-13 2.64874557e-14
+ 5.37054562e-15 8.14155699e-16 7.95353947e-17 5.00462432e-18
+ 2.10079359e-19 6.03469000e-21 1.19529245e-22 1.61036412e-24
+ 1.41278574e-26 7.29337198e-29 1.68373003e-31]
+Convolution at k=10: [0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 6.00492509e-23 6.45453458e-22
+ 5.55299342e-21 3.72262809e-20 2.15649671e-19 1.11572670e-18
+ 5.24753278e-18 2.28589933e-17 9.30205497e-17 3.56718210e-16
+ 1.29700047e-15 4.49227248e-15 1.48836606e-14 4.73181270e-14
+ 1.44751768e-13 4.27065498e-13 1.21753183e-12 3.35987051e-12
+ 8.98767656e-12 2.33350865e-11 5.88697479e-11 1.44450603e-10
+ 3.45039375e-10 8.02920027e-10 1.82149177e-09 4.03086626e-09
+ 8.70607464e-09 1.83616853e-08 3.78321128e-08 7.61799028e-08
+ 1.49972057e-07 2.88745516e-07 5.43862558e-07 1.00243677e-06
+ 1.80857564e-06 3.19478171e-06 5.52688275e-06 9.36617815e-06
+ 1.55523775e-05 2.53101587e-05 4.03805596e-05 6.31757795e-05
+ 9.69523681e-05 1.45993344e-04 2.15785048e-04 3.13170153e-04
+ 4.46454902e-04 6.25447293e-04 8.61403873e-04 1.16686633e-03
+ 1.55537518e-03 2.04105539e-03 2.63807822e-03 3.36001261e-03
+ 4.21908938e-03 5.22541046e-03 6.38614341e-03 7.70474792e-03
+ 9.18028460e-03 1.08068566e-02 1.25732304e-02 1.44626746e-02
+ 1.64530417e-02 1.85171064e-02 2.06231564e-02 2.27358164e-02
+ 2.48170742e-02 2.68274646e-02 2.87273570e-02 3.04782868e-02
+ 3.20442686e-02 3.33930261e-02 3.44970823e-02 3.53346584e-02
+ 3.58903426e-02 3.61555036e-02 3.61284373e-02 3.58142493e-02
+ 3.52244904e-02 3.43765709e-02 3.32929902e-02 3.20004253e-02
+ 3.05287244e-02 2.89098542e-02 2.71768470e-02 2.53627930e-02
+ 2.34999127e-02 2.16187409e-02 1.97474449e-02 1.79112881e-02
+ 1.61322468e-02 1.44287769e-02 1.28157228e-02 1.13043539e-02
+ 9.90251335e-03 8.61485639e-03 7.44315930e-03 6.38667615e-03
+ 5.44252362e-03 4.60607519e-03 3.87134877e-03 3.23137457e-03
+ 2.67853302e-03 2.20485555e-03 1.80228378e-03 1.46288508e-03
+ 1.17902484e-03 9.43497219e-04 7.49617750e-04 5.91281979e-04
+ 4.62994847e-04 3.59875826e-04 2.77644704e-04 2.12592661e-04
+ 1.61542882e-04 1.21804395e-04 9.11223074e-05 6.76269832e-05
+ 4.97841889e-05 3.63476914e-05 2.63153408e-05 1.88892732e-05
+ 1.34405470e-05 9.47826790e-06 6.62306785e-06 4.58466685e-06
+ 3.14315994e-06 2.13362374e-06 1.43362054e-06 9.53183861e-07
+ 6.26893391e-07 4.07680156e-07 2.62043123e-07 1.66400198e-07
+ 1.04338165e-07 6.45651945e-08 3.94050096e-08 2.37030568e-08
+ 1.40418845e-08 8.18546013e-09 4.69071849e-09 2.63961741e-09
+ 1.45683145e-09 7.87459177e-10 4.16187427e-10 2.14671880e-10
+ 1.07830597e-10 5.26131751e-11 2.48633089e-11 1.13409224e-11
+ 4.97299255e-12 2.08640437e-12 8.32739696e-13 3.13998569e-13
+ 1.10889130e-13 3.62723056e-14 1.08288050e-14 2.89120177e-15
+ 6.70413813e-16 1.28738602e-16 1.88507815e-17 1.88299553e-18
+ 1.26764475e-19 5.89101067e-21 1.93251868e-22 4.52421718e-24
+ 7.53411551e-26 8.73753616e-28 6.72027269e-30 3.08590672e-32
+ 6.41164395e-35]
+Convolution at k=11: [0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 3.60046301e-25
+ 4.25704633e-24 3.89123002e-23 2.77512532e-22 1.70280418e-21
+ 9.30469820e-21 4.61827230e-20 2.11971412e-19 9.08363466e-19
+ 3.66627884e-18 1.40251876e-17 5.11041760e-17 1.78112528e-16
+ 5.95734297e-16 1.91764345e-15 5.95488317e-15 1.78750962e-14
+ 5.19589396e-14 1.46476221e-13 4.01004087e-13 1.06736693e-12
+ 2.76509704e-12 6.97811265e-12 1.71692335e-11 4.12160643e-11
+ 9.65982341e-11 2.21163953e-10 4.94917243e-10 1.08300910e-09
+ 2.31847142e-09 4.85750469e-09 9.96375767e-09 2.00158981e-08
+ 3.93913702e-08 7.59667379e-08 1.43600610e-07 2.66137867e-07
+ 4.83700309e-07 8.62309088e-07 1.50820809e-06 2.58859771e-06
+ 4.36079712e-06 7.21205838e-06 1.17122622e-05 1.86814249e-05
+ 2.92732318e-05 4.50745995e-05 6.82195346e-05 1.01513342e-04
+ 1.48560685e-04 2.13888381e-04 3.03051368e-04 4.22708481e-04
+ 5.80653692e-04 7.85788682e-04 1.04802412e-03 1.37809982e-03
+ 1.78731791e-03 2.28718836e-03 2.88899193e-03 3.60327195e-03
+ 4.43927290e-03 5.40434961e-03 6.50337609e-03 7.73818650e-03
+ 9.10708248e-03 1.06044401e-02 1.22204465e-02 1.39409921e-02
+ 1.57477337e-02 1.76183404e-02 1.95269191e-02 2.14446104e-02
+ 2.33403356e-02 2.51816652e-02 2.69357739e-02 2.85704412e-02
+ 3.00550546e-02 3.13615688e-02 3.24653825e-02 3.33460912e-02
+ 3.39880889e-02 3.43809931e-02 3.45198803e-02 3.44053270e-02
+ 3.40432615e-02 3.34446378e-02 3.26249548e-02 3.16036442e-02
+ 3.04033612e-02 2.90492084e-02 2.75679300e-02 2.59871067e-02
+ 2.43343828e-02 2.26367522e-02 2.09199236e-02 1.92077827e-02
+ 1.75219600e-02 1.58815115e-02 1.43027098e-02 1.27989436e-02
+ 1.13807140e-02 1.00557188e-02 8.82900928e-03 7.70320521e-03
+ 6.67875337e-03 5.75421384e-03 4.92656090e-03 4.19148578e-03
+ 3.54369088e-03 2.97716665e-03 2.48544461e-03 2.06182192e-03
+ 1.69955465e-03 1.39201885e-03 1.13283957e-03 9.15989579e-04
+ 7.35859893e-04 5.87305333e-04 4.65668341e-04 3.66784627e-04
+ 2.86974114e-04 2.23020517e-04 1.72142612e-04 1.31959895e-04
+ 1.00454986e-04 7.59346918e-05 5.69912984e-05 4.24652596e-05
+ 3.14101521e-05 2.30604617e-05 1.68025296e-05 1.21487936e-05
+ 8.71530025e-06 6.20235540e-06 4.37809872e-06 3.06473762e-06
+ 2.12715151e-06 1.46356914e-06 9.98029354e-07 6.74352262e-07
+ 4.51371212e-07 2.99202804e-07 1.96360293e-07 1.27543554e-07
+ 8.19650624e-08 5.20954313e-08 3.27334147e-08 2.03239083e-08
+ 1.24632688e-08 7.54447201e-09 4.50543969e-09 2.65258225e-09
+ 1.53852454e-09 8.78391831e-10 4.93199877e-10 2.72058444e-10
+ 1.47266157e-10 7.81224319e-11 4.05540049e-11 2.05655253e-11
+ 1.01683732e-11 4.89106321e-12 2.28289056e-12 1.03089635e-12
+ 4.48853643e-13 1.87678106e-13 7.50038966e-14 2.84873155e-14
+ 1.02121547e-14 3.42572146e-15 1.06364380e-15 3.01280890e-16
+ 7.63331661e-17 1.68186475e-17 3.08473873e-18 4.39398773e-19
+ 4.46268790e-20 3.17438953e-21 1.60583626e-22 5.88594072e-24
+ 1.58176204e-25 3.12289383e-27 4.48512386e-29 4.56567606e-31
+ 3.12605617e-33 1.29262461e-35 2.44155402e-38]
+Convolution at k=12: [0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 2.15878362e-27 2.78450304e-26 2.69487468e-25 2.03515073e-24
+ 1.31716231e-23 7.57233459e-23 3.95019418e-22 1.90291694e-21
+ 8.55312252e-21 3.61873058e-20 1.45054441e-19 5.53703427e-19
+ 2.02139379e-18 7.08172249e-18 2.38786645e-17 7.76838029e-17
+ 2.44349523e-16 7.44464930e-16 2.20045738e-15 6.31857886e-15
+ 1.76478996e-14 4.79957117e-14 1.27222883e-13 3.28968168e-13
+ 8.30429218e-13 2.04791552e-12 4.93688701e-12 1.16404935e-11
+ 2.68589480e-11 6.06747758e-11 1.34249646e-10 2.91053039e-10
+ 6.18499352e-10 1.28871230e-09 2.63361745e-09 5.28019504e-09
+ 1.03886654e-08 2.00625721e-08 3.80389634e-08 7.08237256e-08
+ 1.29516582e-07 2.32677063e-07 4.10720144e-07 7.12498173e-07
+ 1.21491886e-06 2.03665384e-06 3.35718535e-06 5.44258413e-06
+ 8.67946409e-06 1.36184632e-05 2.10282992e-05 3.19608925e-05
+ 4.78272089e-05 7.04823428e-05 1.02316986e-04 1.46350880e-04
+ 2.06322262e-04 2.86765845e-04 3.93070677e-04 5.31508502e-04
+ 7.09223145e-04 9.34172009e-04 1.21501222e-03 1.56092610e-03
+ 1.98138372e-03 2.48584368e-03 3.08339765e-03 3.78236818e-03
+ 4.58987380e-03 5.51137915e-03 6.55025086e-03 7.70734221e-03
+ 8.98063002e-03 1.03649269e-02 1.18516896e-02 1.34289408e-02
+ 1.50813167e-02 1.67902480e-02 1.85342741e-02 2.02894840e-02
+ 2.20300726e-02 2.37289916e-02 2.53586720e-02 2.68917902e-02
+ 2.83020462e-02 2.95649229e-02 3.06583961e-02 3.15635657e-02
+ 3.22651847e-02 3.27520652e-02 3.30173489e-02 3.30586325e-02
+ 3.28779488e-02 3.24816075e-02 3.18799077e-02 3.10867365e-02
+ 3.01190757e-02 2.89964378e-02 2.77402557e-02 2.63732513e-02
+ 2.49188068e-02 2.34003595e-02 2.18408406e-02 2.02621727e-02
+ 1.86848397e-02 1.71275350e-02 1.56068950e-02 1.41373166e-02
+ 1.27308565e-02 1.13972074e-02 1.01437420e-02 8.97561680e-03
+ 7.89592418e-03 6.90588164e-03 6.00504795e-03 5.19155514e-03
+ 4.46234682e-03 3.81341445e-03 3.24002429e-03 2.73692932e-03
+ 2.29856179e-03 1.91920348e-03 1.59313200e-03 1.31474266e-03
+ 1.07864621e-03 8.79743814e-04 7.13280936e-04 5.74882442e-04
+ 4.60571302e-04 3.66773510e-04 2.90311742e-04 2.28390204e-04
+ 1.78572909e-04 1.38757402e-04 1.07145682e-04 8.22137857e-05
+ 6.26812483e-05 4.74813559e-05 3.57329071e-05 2.67139632e-05
+ 1.98378941e-05 1.46318770e-05 1.07178820e-05 7.79608721e-06
+ 5.63059674e-06 4.03729166e-06 2.87361255e-06 2.03006216e-06
+ 1.42321366e-06 9.90017239e-07 6.83210995e-07 4.67658509e-07
+ 3.17454658e-07 2.13660593e-07 1.42548125e-07 9.42519507e-08
+ 6.17448290e-08 4.00657606e-08 2.57442674e-08 1.63750828e-08
+ 1.03070018e-08 6.41747917e-09 3.95096467e-09 2.40411903e-09
+ 1.44514996e-09 8.57717430e-10 5.02340190e-10 2.90132781e-10
+ 1.65133451e-10 9.25495299e-11 5.10315036e-11 2.76572228e-11
+ 1.47169005e-11 7.67955670e-12 3.92442933e-12 1.96096542e-12
+ 9.56447084e-13 4.54456156e-13 2.09887421e-13 9.39782553e-14
+ 4.06753323e-14 1.69594684e-14 6.78480581e-15 2.59215921e-15
+ 9.40459372e-16 3.21811013e-16 1.02981479e-16 3.04882399e-17
+ 8.23369891e-18 1.99012993e-18 4.19155258e-19 7.39275801e-20
+ 1.02974091e-20 1.05920926e-21 7.88460709e-23 4.28482244e-24
+ 1.72563823e-25 5.20973316e-27 1.18459798e-28 2.02126218e-30
+ 2.55157315e-32 2.31437107e-34 1.42784402e-36 5.36979764e-39
+ 9.29743769e-42]
+Convolution at k=13: [0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 1.29437427e-29 1.80867511e-28 1.84766181e-27
+ 1.47177458e-26 1.00114831e-25 6.03535336e-25 3.29773574e-24
+ 1.66183490e-23 7.80832075e-23 3.45135532e-22 1.44469363e-21
+ 5.75719491e-21 2.19374399e-20 8.02111087e-20 2.82264276e-19
+ 9.58398285e-19 3.14661254e-18 1.00083163e-17 3.08891314e-17
+ 9.26399425e-17 2.70325085e-16 7.68343952e-16 2.12931357e-15
+ 5.75871877e-15 1.52111829e-14 3.92703916e-14 9.91554992e-14
+ 2.45005331e-13 5.92755791e-13 1.40485428e-12 3.26315062e-12
+ 7.43142294e-12 1.65996815e-11 3.63807049e-11 7.82573013e-11
+ 1.65268177e-10 3.42754322e-10 6.98258519e-10 1.39762900e-09
+ 2.74919821e-09 5.31556016e-09 1.01042993e-08 1.88868113e-08
+ 3.47203376e-08 6.27851385e-08 1.11699191e-07 1.95539551e-07
+ 3.36884453e-07 5.71293469e-07 9.53762140e-07 1.56781580e-06
+ 2.53803331e-06 4.04689734e-06 6.35693078e-06 9.83906912e-06
+ 1.50081066e-05 2.25658076e-05 3.34518715e-05 4.89023630e-05
+ 7.05144760e-05 1.00315612e-04 1.40833762e-04 1.95165165e-04
+ 2.67034239e-04 3.60839973e-04 4.81682389e-04 6.35362466e-04
+ 8.28349138e-04 1.06770765e-03 1.36098484e-03 1.71604858e-03
+ 2.14088098e-03 2.64332737e-03 3.23080608e-03 3.90998706e-03
+ 4.68644991e-03 5.56433466e-03 6.54600059e-03 7.63170942e-03
+ 8.81934993e-03 1.01042203e-02 1.14788831e-02 1.29331058e-02
+ 1.44538953e-02 1.60256327e-02 1.76303089e-02 1.92478572e-02
+ 2.08565741e-02 2.24336167e-02 2.39555588e-02 2.53989863e-02
+ 2.67411106e-02 2.79603769e-02 2.90370429e-02 2.99537096e-02
+ 3.06957809e-02 3.12518377e-02 3.16139137e-02 3.17776632e-02
+ 3.17424190e-02 3.15111390e-02 3.10902489e-02 3.04893881e-02
+ 2.97210732e-02 2.88002932e-02 2.77440530e-02 2.65708852e-02
+ 2.53003461e-02 2.39525147e-02 2.25475113e-02 2.11050484e-02
+ 1.96440275e-02 1.81821899e-02 1.67358281e-02 1.53195625e-02
+ 1.39461824e-02 1.26265515e-02 1.13695731e-02 1.01822106e-02
+ 9.06955552e-03 8.03493622e-03 7.08005860e-03 6.20517103e-03
+ 5.40924503e-03 4.69016452e-03 4.04491660e-03 3.46977814e-03
+ 2.96049323e-03 2.51243751e-03 2.12076677e-03 1.78054768e-03
+ 1.48686988e-03 1.23493916e-03 1.02015214e-03 8.38153586e-04
+ 6.84877600e-04 5.56574536e-04 4.49825345e-04 3.61545350e-04
+ 2.88979331e-04 2.29689733e-04 1.81539693e-04 1.42672388e-04
+ 1.11488062e-04 8.66198224e-05 6.69091707e-05 5.13819859e-05
+ 3.92255360e-05 2.97669195e-05 2.24532102e-05 1.68334553e-05
+ 1.25425902e-05 9.28725141e-06 6.83341751e-06 4.99576577e-06
+ 3.62860565e-06 2.61823624e-06 1.87656828e-06 1.33585319e-06
+ 9.44368003e-07 6.62915459e-07 4.62010828e-07 3.19640953e-07
+ 2.19494759e-07 1.49578226e-07 1.01139677e-07 6.78430387e-08
+ 4.51373273e-08 2.97799347e-08 1.94792973e-08 1.26293781e-08
+ 8.11409042e-09 5.16450701e-09 3.25553289e-09 2.03180832e-09
+ 1.25505643e-09 7.67015521e-10 4.63588565e-10 2.76988368e-10
+ 1.63526006e-10 9.53425039e-11 5.48678761e-11 3.11469853e-11
+ 1.74296454e-11 9.60759532e-12 5.21242725e-12 2.78081424e-12
+ 1.45738667e-12 7.49485341e-13 3.77741902e-13 1.86322030e-13
+ 8.98026739e-14 4.22185814e-14 1.93215206e-14 8.58855921e-15
+ 3.69846897e-15 1.53838235e-15 6.15981093e-16 2.36487113e-16
+ 8.66471540e-17 3.01289972e-17 9.87552280e-18 3.02586174e-18
+ 8.57555873e-19 2.21742603e-19 5.13659963e-20 1.03944983e-20
+ 1.77263257e-21 2.42387921e-22 2.51812199e-23 1.94689983e-24
+ 1.12468779e-25 4.91134204e-27 1.63835047e-28 4.19975539e-30
+ 8.27174782e-32 1.24242860e-33 1.39893963e-35 1.14417793e-37
+ 6.42342231e-40 2.21522052e-42 3.54046427e-45]
+Convolution at k=14: [0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 7.76087399e-32 1.16787404e-30
+ 1.25581386e-29 1.05158647e-28 7.49523954e-28 4.72448309e-27
+ 2.69600679e-26 1.41720580e-25 6.94104833e-25 3.19604095e-24
+ 1.39301304e-23 5.77838301e-23 2.29135422e-22 8.71740086e-22
+ 3.19167470e-21 1.12748268e-20 3.85144103e-20 1.27465462e-19
+ 4.09395963e-19 1.27795184e-18 3.88211954e-18 1.14896686e-17
+ 3.31648043e-17 9.34500524e-17 2.57261475e-16 6.92451052e-16
+ 1.82355128e-15 4.70143046e-15 1.18732577e-14 2.93873996e-14
+ 7.13195282e-14 1.69785091e-13 3.96649592e-13 9.09682391e-13
+ 2.04877628e-12 4.53269849e-12 9.85376602e-12 2.10546161e-11
+ 4.42283244e-11 9.13614148e-11 1.85621739e-10 3.71011358e-10
+ 7.29661383e-10 1.41224537e-09 2.69047187e-09 5.04600487e-09
+ 9.31829212e-09 1.69457421e-08 3.03518240e-08 5.35515324e-08
+ 9.30859245e-08 1.59434699e-07 2.69110203e-07 4.47701192e-07
+ 7.34210020e-07 1.18710970e-06 1.89263166e-06 2.97587214e-06
+ 4.61536319e-06 7.06177730e-06 1.06614059e-05 1.58849524e-05
+ 2.33619940e-05 3.39211776e-05 4.86358191e-05 6.88740763e-05
+ 9.63522679e-05 1.33189256e-04 1.81959119e-04 2.45738673e-04
+ 3.28145821e-04 4.33364258e-04 5.66149812e-04 7.31813757e-04
+ 9.36178725e-04 1.18550357e-03 1.48637453e-03 1.84556150e-03
+ 2.26983969e-03 2.76577921e-03 3.33950673e-03 3.99644572e-03
+ 4.74104367e-03 5.57649621e-03 6.50447953e-03 7.52490340e-03
+ 8.63569699e-03 9.83263980e-03 1.11092485e-02 1.24567290e-02
+ 1.38640011e-02 1.53177993e-02 1.68028519e-02 1.83021345e-02
+ 1.97971948e-02 2.12685370e-02 2.26960568e-02 2.40595113e-02
+ 2.53390075e-02 2.65154950e-02 2.75712425e-02 2.84902833e-02
+ 2.92588138e-02 2.98655316e-02 3.03019007e-02 3.05623379e-02
+ 3.06443136e-02 3.05483658e-02 3.02780294e-02 2.98396856e-02
+ 2.92423386e-02 2.84973294e-02 2.76179999e-02 2.66193188e-02
+ 2.55174831e-02 2.43295107e-02 2.30728348e-02 2.17649143e-02
+ 2.04228701e-02 1.90631562e-02 1.77012740e-02 1.63515327e-02
+ 1.50268608e-02 1.37386688e-02 1.24967623e-02 1.13093030e-02
+ 1.01828140e-02 9.12222450e-03 8.13094803e-03 7.21098837e-03
+ 6.36306675e-03 5.58676404e-03 4.88067222e-03 4.24254957e-03
+ 3.66947470e-03 3.15799536e-03 2.70426866e-03 2.30419002e-03
+ 1.95350898e-03 1.64793072e-03 1.38320280e-03 1.15518695e-03
+ 9.59916619e-04 7.93640910e-04 6.52856173e-04 5.34326467e-04
+ 4.35094363e-04 3.52483524e-04 2.84094526e-04 2.27795286e-04
+ 1.81707395e-04 1.44189511e-04 1.13818828e-04 8.93714995e-05
+ 6.98027474e-05 5.42272328e-05 4.19001502e-05 3.21993773e-05
+ 2.46089123e-05 1.87037376e-05 1.41361794e-05 1.06237675e-05
+ 7.93855844e-06 5.89784648e-06 4.35616706e-06 3.19847994e-06
+ 2.33441338e-06 1.69344853e-06 1.22092617e-06 8.74764006e-07
+ 6.22780747e-07 4.40533059e-07 3.09581233e-07 2.16109855e-07
+ 1.49839562e-07 1.03175236e-07 7.05445187e-08 4.78881623e-08
+ 3.22704213e-08 2.15835601e-08 1.43254920e-08 9.43377149e-09
+ 6.16263888e-09 3.99267859e-09 2.56497396e-09 1.63350610e-09
+ 1.03102422e-09 6.44778689e-10 3.99412001e-10 2.44999855e-10
+ 1.48764839e-10 8.93858480e-11 5.31255090e-11 3.12191796e-11
+ 1.81312144e-11 1.04017263e-11 5.89147903e-12 3.29253083e-12
+ 1.81444825e-12 9.85291322e-13 5.26812798e-13 2.77109951e-13
+ 1.43267119e-13 7.27261910e-14 3.62065722e-14 1.76556170e-14
+ 8.42093822e-15 3.92220804e-15 1.78082041e-15 7.86608777e-16
+ 3.37258602e-16 1.39995893e-16 5.60967462e-17 2.16250803e-17
+ 7.98846138e-18 2.81475500e-18 9.40788834e-19 2.96290755e-19
+ 8.72066704e-20 2.37413189e-20 5.89963445e-21 1.31502162e-21
+ 2.56798927e-22 4.25337047e-23 5.72643797e-24 5.99643889e-25
+ 4.78683042e-26 2.91452412e-27 1.36534765e-28 4.96688956e-30
+ 1.41199053e-31 3.14277379e-33 5.45779509e-35 7.32023657e-37
+ 7.43825155e-39 5.53913989e-41 2.85281210e-43 9.08444895e-46
+ 1.34820880e-48]
+Convolution at k=15: [0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 4.65330363e-34
+ 7.50256882e-33 8.47072085e-32 7.43486848e-31 5.53780407e-30
+ 3.64062583e-29 2.16418845e-28 1.18379714e-27 6.02862331e-27
+ 2.88461225e-26 1.30589599e-25 5.62452210e-25 2.31515625e-24
+ 9.14118509e-24 3.47301892e-23 1.27303905e-22 4.51222178e-22
+ 1.54955091e-21 5.16453530e-21 1.67309384e-20 5.27534556e-20
+ 1.62082845e-19 4.85778346e-19 1.42156465e-18 4.06531524e-18
+ 1.13699175e-17 3.11215438e-17 8.34225743e-17 2.19118145e-16
+ 5.64257750e-16 1.42525987e-15 3.53283701e-15 8.59698901e-15
+ 2.05460637e-14 4.82418600e-14 1.11320432e-13 2.52530060e-13
+ 5.63327815e-13 1.23604210e-12 2.66830576e-12 5.66849102e-12
+ 1.18528228e-11 2.43997698e-11 4.94585338e-11 9.87337429e-11
+ 1.94147560e-10 3.76105476e-10 7.17901611e-10 1.35039586e-09
+ 2.50356639e-09 4.57528256e-09 8.24318152e-09 1.46435394e-08
+ 2.56523270e-08 4.43191841e-08 7.55258546e-08 1.26967700e-07
+ 2.10591046e-07 3.44660678e-07 5.56680513e-07 8.87444846e-07
+ 1.39655496e-06 2.16979174e-06 3.32878290e-06 5.04343530e-06
+ 7.54760862e-06 1.11584753e-05 1.62999318e-05 2.35302886e-05
+ 3.35742590e-05 4.73589943e-05 6.60535625e-05 9.11108652e-05
+ 1.24310528e-04 1.67800825e-04 2.24137224e-04 2.96314701e-04
+ 3.87790645e-04 5.02494919e-04 6.44823605e-04 8.19613098e-04
+ 1.03209156e-03 1.28780542e-03 1.59251927e-03 1.95208896e-03
+ 2.37230845e-03 2.85873284e-03 3.41648120e-03 4.05002439e-03
+ 4.76296439e-03 5.55781290e-03 6.43577782e-03 7.39656680e-03
+ 8.43821718e-03 9.55696147e-03 1.07471366e-02 1.20011437e-02
+ 1.33094651e-02 1.46607395e-02 1.60418997e-02 1.74383685e-02
+ 1.88343117e-02 2.02129403e-02 2.15568540e-02 2.28484165e-02
+ 2.40701498e-02 2.52051361e-02 2.62374128e-02 2.71523486e-02
+ 2.79369878e-02 2.85803516e-02 2.90736874e-02 2.94106577e-02
+ 2.95874639e-02 2.96029018e-02 2.94583488e-02 2.91576848e-02
+ 2.87071509e-02 2.81151523e-02 2.73920144e-02 2.65496996e-02
+ 2.56014968e-02 2.45616929e-02 2.34452374e-02 2.22674107e-02
+ 2.10435043e-02 1.97885218e-02 1.85169089e-02 1.72423154e-02
+ 1.59773957e-02 1.47336488e-02 1.35212991e-02 1.23492180e-02
+ 1.12248842e-02 1.01543796e-02 9.14241847e-03 8.19240366e-03
+ 7.30650762e-03 6.48577135e-03 5.73021744e-03 5.03897234e-03
+ 4.41039342e-03 3.84219678e-03 3.33158257e-03 2.87535457e-03
+ 2.47003199e-03 2.11195157e-03 1.79735863e-03 1.52248666e-03
+ 1.28362488e-03 1.07717403e-03 8.99690882e-04 7.47922106e-04
+ 6.18828420e-04 5.09600093e-04 4.17664867e-04 3.40689471e-04
+ 2.76575809e-04 2.23452920e-04 1.79665682e-04 1.43761171e-04
+ 1.14473448e-04 9.07074843e-05 7.15227728e-05 5.61171007e-05
+ 4.38108499e-05 3.40320956e-05 2.63026983e-05 2.02255139e-05
+ 1.54727857e-05 1.17757374e-05 8.91534663e-06 6.71425144e-06
+ 5.02971919e-06 3.74759735e-06 2.77715504e-06 2.04672243e-06
+ 1.50003561e-06 1.09319756e-06 7.92171653e-07 5.70730296e-07
+ 4.08789019e-07 2.91063678e-07 2.05996188e-07 1.44901388e-07
+ 1.01294469e-07 7.03645722e-08 4.85657776e-08 3.33015801e-08
+ 2.26832335e-08 1.53459989e-08 1.03104282e-08 6.87840022e-09
+ 4.55576781e-09 2.99522469e-09 1.95441589e-09 1.26545249e-09
+ 8.12891552e-10 5.17950936e-10 3.27280016e-10 2.05033394e-10
+ 1.27319992e-10 7.83467147e-11 4.77611133e-11 2.88354066e-11
+ 1.72359266e-11 1.01964388e-11 5.96766682e-12 3.45403615e-12
+ 1.97617529e-12 1.11710699e-12 6.23608401e-13 3.43585620e-13
+ 1.86724105e-13 1.00027828e-13 5.27815641e-14 2.74119920e-14
+ 1.39996817e-14 7.02424089e-15 3.45880486e-15 1.66952018e-15
+ 7.88923815e-16 3.64445706e-16 1.64319990e-16 7.21823852e-17
+ 3.08307269e-17 1.27751261e-17 5.12225362e-18 1.98152402e-18
+ 7.37083339e-19 2.62611548e-19 8.92066323e-20 2.87340930e-20
+ 8.71885658e-21 2.47221103e-21 6.48503006e-22 1.55377020e-22
+ 3.34427865e-23 6.32594547e-24 1.02138116e-24 1.35706147e-25
+ 1.43024891e-26 1.17325689e-27 7.47669385e-29 3.72459736e-30
+ 1.46192825e-31 4.54932350e-33 1.12579178e-34 2.21322838e-36
+ 3.43633585e-38 4.16296762e-40 3.85393230e-42 2.63414604e-44
+ 1.25314268e-46 3.70645517e-49 5.13397909e-52]
+Convolution at k=16: [0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 2.79005106e-36 4.79832291e-35 5.67539113e-34 5.20798429e-33
+ 4.04424084e-32 2.76679877e-31 1.70955874e-30 9.70951120e-30
+ 5.13036826e-29 2.54544636e-28 1.19433207e-27 5.32945321e-27
+ 2.27212651e-26 9.29002491e-26 3.65440003e-25 1.38675694e-24
+ 5.08831277e-24 1.80886596e-23 6.24104429e-23 2.09312068e-22
+ 6.83295123e-22 2.17382890e-21 6.74708026e-21 2.04504390e-20
+ 6.05852795e-20 1.75571813e-19 4.98057640e-19 1.38397329e-18
+ 3.76929953e-18 1.00674183e-17 2.63827613e-17 6.78687267e-17
+ 1.71456278e-16 4.25543574e-16 1.03800997e-15 2.48928200e-15
+ 5.87082908e-15 1.36208931e-14 3.10965221e-14 6.98762212e-14
+ 1.54583210e-13 3.36750178e-13 7.22532081e-13 1.52719976e-12
+ 3.18056679e-12 6.52768366e-12 1.32047853e-11 2.63323274e-11
+ 5.17722924e-11 1.00373106e-10 1.91914614e-10 3.61931176e-10
+ 6.73326550e-10 1.23583393e-09 2.23810549e-09 3.99979176e-09
+ 7.05472541e-09 1.22816787e-08 2.11066324e-08 3.58106724e-08
+ 5.99911634e-08 9.92413884e-08 1.62135941e-07 2.61636175e-07
+ 4.17061935e-07 6.56812071e-07 1.02205555e-06 1.57165511e-06
+ 2.38862309e-06 3.58843946e-06 5.32958044e-06 7.82660433e-06
+ 1.13661140e-05 1.63258537e-05 2.31970971e-05 3.26103347e-05
+ 4.53640762e-05 6.24563377e-05 8.51180987e-05 1.14847693e-04
+ 1.53444755e-04 2.03042002e-04 2.66132812e-04 3.45592273e-04
+ 4.44689193e-04 5.67086459e-04 7.16827165e-04 8.98304102e-04
+ 1.11621059e-03 1.37547111e-03 1.68115090e-03 2.03834452e-03
+ 2.45204440e-03 2.92699136e-03 3.46751015e-03 4.07733435e-03
+ 4.75942567e-03 5.51579369e-03 6.34732277e-03 7.25361312e-03
+ 8.23284327e-03 9.28166074e-03 1.03951075e-02 1.15665855e-02
+ 1.27878666e-02 1.40491500e-02 1.53391678e-02 1.66453386e-02
+ 1.79539663e-02 1.92504803e-02 2.05197099e-02 2.17461871e-02
+ 2.29144679e-02 2.40094627e-02 2.50167658e-02 2.59229743e-02
+ 2.67159854e-02 2.73852639e-02 2.79220710e-02 2.83196487e-02
+ 2.85733531e-02 2.86807352e-02 2.86415650e-02 2.84578028e-02
+ 2.81335166e-02 2.76747515e-02 2.70893561e-02 2.63867713e-02
+ 2.55777907e-02 2.46742996e-02 2.36890004e-02 2.26351346e-02
+ 2.15262066e-02 2.03757189e-02 1.91969243e-02 1.80026001e-02
+ 1.68048499e-02 1.56149346e-02 1.44431366e-02 1.32986563e-02
+ 1.21895415e-02 1.11226487e-02 1.01036343e-02 9.13697166e-03
+ 8.22599344e-03 7.37295281e-03 6.57910177e-03 5.84478176e-03
+ 5.16952315e-03 4.55214999e-03 3.99088675e-03 3.48346407e-03
+ 3.02722119e-03 2.61920281e-03 2.25624879e-03 1.93507555e-03
+ 1.65234836e-03 1.40474398e-03 1.18900372e-03 1.00197702e-03
+ 8.40656017e-04 7.02201672e-04 5.83962227e-04 4.83484825e-04
+ 3.98521167e-04 3.27028103e-04 2.67164030e-04 2.17281935e-04
+ 1.75919858e-04 1.41789471e-04 1.13763409e-04 9.08618749e-05
+ 7.22389762e-05 5.71691709e-05 4.50341075e-05 3.53100873e-05
+ 2.75563097e-05 2.14040061e-05 1.65465224e-05 1.27303740e-05
+ 9.74726154e-06 7.42701823e-06 5.63143739e-06 4.24891924e-06
+ 3.18986798e-06 2.38276666e-06 1.77085657e-06 1.30934991e-06
+ 9.63107498e-07 7.04718294e-07 5.12922612e-07 3.71326648e-07
+ 2.67361846e-07 1.91448250e-07 1.36326444e-07 9.65277144e-08
+ 6.79566433e-08 4.75644821e-08 3.30952503e-08 2.28896783e-08
+ 1.57348204e-08 1.07494607e-08 7.29737494e-09 4.92211232e-09
+ 3.29828606e-09 2.19543831e-09 1.45141424e-09 9.52876350e-10
+ 6.21142192e-10 4.01962305e-10 2.58193848e-10 1.64586724e-10
+ 1.04099692e-10 6.53163860e-11 4.06461813e-11 2.50809037e-11
+ 1.53421755e-11 9.30119132e-12 5.58699182e-12 3.32412248e-12
+ 1.95838560e-12 1.14207451e-12 6.59033874e-13 3.76156260e-13
+ 2.12272265e-13 1.18381930e-13 6.52126307e-14 3.54651316e-14
+ 1.90302705e-14 1.00690913e-14 5.24978994e-15 2.69511660e-15
+ 1.36127218e-15 6.75862803e-16 3.29530202e-16 1.57612208e-16
+ 7.38634899e-17 3.38726223e-17 1.51781715e-17 6.63505459e-18
+ 2.82453074e-18 1.16856768e-18 4.68799163e-19 1.81901109e-19
+ 6.80666808e-20 2.44811422e-20 8.43029562e-21 2.76691649e-21
+ 8.60904227e-22 2.52297764e-22 6.90958863e-23 1.75119878e-23
+ 4.05720429e-24 8.45852353e-25 1.55484042e-25 2.45468957e-26
+ 3.22448748e-27 3.41660983e-28 2.86907139e-29 1.90258696e-30
+ 1.00054208e-31 4.20013646e-33 1.41566742e-34 3.84493328e-36
+ 8.41945931e-38 1.48178505e-39 2.08001161e-41 2.29737584e-43
+ 1.95310025e-45 1.23356561e-47 5.45239803e-50 1.50551267e-52
+ 1.95501924e-55]
+Convolution at k=17: [0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 1.67287276e-38 3.05681509e-37 3.77984382e-36
+ 3.61812796e-35 2.92312890e-34 2.07696441e-33 1.33127965e-32
+ 7.83577378e-32 4.28760904e-31 2.20167034e-30 1.06863322e-29
+ 4.93103350e-29 2.17324532e-28 9.18360013e-28 3.73297280e-27
+ 1.46361105e-26 5.54814907e-26 2.03754991e-25 7.26239470e-25
+ 2.51619214e-24 8.48599889e-24 2.78929358e-23 8.94536685e-23
+ 2.80186303e-22 8.57888223e-22 2.56982349e-21 7.53678951e-21
+ 2.16557645e-20 6.10004836e-20 1.68543519e-19 4.57021303e-19
+ 1.21678898e-18 3.18230200e-18 8.17886924e-18 2.06650422e-17
+ 5.13480622e-17 1.25516079e-16 3.01922313e-16 7.14884083e-16
+ 1.66661948e-15 3.82653780e-15 8.65457470e-15 1.92863808e-14
+ 4.23555517e-14 9.16871637e-14 1.95670082e-13 4.11749076e-13
+ 8.54483507e-13 1.74905861e-12 3.53181574e-12 7.03631044e-12
+ 1.38325647e-11 2.68365182e-11 5.13887577e-11 9.71358045e-11
+ 1.81262892e-10 3.33967664e-10 6.07592305e-10 1.09163597e-09
+ 1.93707204e-09 3.39515931e-09 5.87847616e-09 1.00554898e-08
+ 1.69949268e-08 2.83829131e-08 4.68447256e-08 7.64144664e-08
+ 1.23210438e-07 1.96391763e-07 3.09492949e-07 4.82257550e-07
+ 7.43119109e-07 1.13250628e-06 1.70717752e-06 2.54581671e-06
+ 3.75614114e-06 5.48378413e-06 7.92321053e-06 1.13309015e-05
+ 1.60409979e-05 2.24835188e-05 3.12051630e-05 4.28925645e-05
+ 5.83976969e-05 7.87649188e-05 1.05258919e-04 1.39392574e-04
+ 1.82953480e-04 2.38027668e-04 3.07018806e-04 3.92661008e-04
+ 4.98023283e-04 6.26503598e-04 7.81810666e-04 9.67931693e-04
+ 1.18908470e-03 1.44965442e-03 1.75411137e-03 2.10691435e-03
+ 2.51239726e-03 2.97464222e-03 3.49734139e-03 4.08365096e-03
+ 4.73604152e-03 5.45614945e-03 6.24463461e-03 7.10104980e-03
+ 8.02372768e-03 9.00969036e-03 1.00545869e-02 1.11526627e-02
+ 1.22967649e-02 1.34783850e-02 1.46877413e-02 1.59138996e-02
+ 1.71449313e-02 1.83681053e-02 1.95701103e-02 2.07373007e-02
+ 2.18559606e-02 2.29125774e-02 2.38941188e-02 2.47883033e-02
+ 2.55838580e-02 2.62707549e-02 2.68404186e-02 2.72859018e-02
+ 2.76020202e-02 2.77854463e-02 2.78347591e-02 2.77504480e-02
+ 2.75348733e-02 2.71921847e-02 2.67282011e-02 2.61502565e-02
+ 2.54670171e-02 2.46882761e-02 2.38247323e-02 2.28877585e-02
+ 2.18891677e-02 2.08409820e-02 1.97552102e-02 1.86436404e-02
+ 1.75176501e-02 1.63880385e-02 1.52648838e-02 1.41574259e-02
+ 1.30739770e-02 1.20218584e-02 1.10073638e-02 1.00357470e-02
+ 9.11123259e-03 8.23704604e-03 7.41546181e-03 6.64786525e-03
+ 5.93482604e-03 5.27617977e-03 4.67111487e-03 4.11826225e-03
+ 3.61578504e-03 3.16146646e-03 2.75279387e-03 2.38703765e-03
+ 2.06132365e-03 1.77269850e-03 1.51818720e-03 1.29484289e-03
+ 1.09978860e-03 9.30251501e-04 7.83589769e-04 6.57312776e-04
+ 5.49095134e-04 4.56785302e-04 3.78409456e-04 3.12171337e-04
+ 2.56448771e-04 2.09787521e-04 1.70893085e-04 1.38620995e-04
+ 1.11966105e-04 9.00513019e-05 7.21159920e-05 5.75046640e-05
+ 4.56557669e-05 3.60910820e-05 2.84057241e-05 2.22588612e-05
+ 1.73652050e-05 1.34872973e-05 1.04285872e-05 8.02727897e-06
+ 6.15091420e-06 4.69164122e-06 3.56211840e-06 2.69199464e-06
+ 2.02490826e-06 1.51594707e-06 1.12951391e-06 8.37545516e-07
+ 6.18036366e-07 4.53823447e-07 3.31592426e-07 2.41070164e-07
+ 1.74372830e-07 1.25482972e-07 8.98326697e-08 6.39733332e-08
+ 4.53157417e-08 3.19266618e-08 2.23707021e-08 1.55881010e-08
+ 1.08008630e-08 7.44111085e-09 5.09673122e-09 3.47039539e-09
+ 2.34885398e-09 1.58007352e-09 1.05631840e-09 7.01710973e-10
+ 4.63142398e-10 3.03674165e-10 1.97778643e-10 1.27928471e-10
+ 8.21686074e-11 5.23994273e-11 3.31708152e-11 2.08409565e-11
+ 1.29935990e-11 8.03720683e-12 4.93120493e-12 3.00037741e-12
+ 1.80996538e-12 1.08224654e-12 6.41248788e-13 3.76397215e-13
+ 2.18802538e-13 1.25922058e-13 7.17203011e-14 4.04119253e-14
+ 2.25179257e-14 1.24025117e-14 6.74916121e-15 3.62684760e-15
+ 1.92358306e-15 1.00632432e-15 5.18957783e-16 2.63627563e-16
+ 1.31821241e-16 6.48271937e-17 3.13267032e-17 1.48603573e-17
+ 6.91243221e-18 3.14921924e-18 1.40338167e-18 6.10829627e-19
+ 2.59261264e-19 1.07115225e-19 4.29924060e-20 1.67256350e-20
+ 6.29100131e-21 2.28111321e-21 7.94736182e-22 2.65021665e-22
+ 8.42121146e-23 2.53630758e-23 7.19468626e-24 1.90751968e-24
+ 4.68244064e-25 1.05173600e-25 2.12967917e-26 3.81496533e-27
+ 5.90417583e-28 7.67914447e-29 8.17338349e-30 7.00419933e-31
+ 4.81009848e-32 2.65397629e-33 1.18277248e-34 4.28025269e-36
+ 1.26255398e-37 3.04014307e-39 5.96790532e-41 9.50546836e-43
+ 1.21741873e-44 1.23550510e-46 9.71018670e-49 5.70000942e-51
+ 2.35262665e-53 6.09130427e-56 7.44471326e-59]
+Convolution at k=18: [0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 1.00302942e-40 1.94063345e-39
+ 2.50394841e-38 2.49512797e-37 2.09335372e-36 1.54202658e-35
+ 1.02353912e-34 6.23266472e-34 3.52575451e-33 1.87058910e-32
+ 9.37645273e-32 4.46648851e-31 2.03152044e-30 8.85733219e-30
+ 3.71396853e-29 1.50189013e-28 5.87141219e-28 2.22357950e-27
+ 8.17251563e-27 2.91974492e-26 1.01539263e-25 3.44167622e-25
+ 1.13826342e-24 3.67699519e-24 1.16123231e-23 3.58824558e-23
+ 1.08570288e-22 3.21888768e-22 9.35710680e-22 2.66852160e-21
+ 7.47008586e-21 2.05362229e-20 5.54694468e-20 1.47268193e-19
+ 3.84464541e-19 9.87311448e-19 2.49488204e-18 6.20556405e-18
+ 1.51976430e-17 3.66568313e-17 8.71022993e-17 2.03941498e-16
+ 4.70632235e-16 1.07065768e-15 2.40159531e-15 5.31265353e-15
+ 1.15921292e-14 2.49533152e-14 5.30000038e-14 1.11089190e-13
+ 2.29814922e-13 4.69304132e-13 9.46142697e-13 1.88338381e-12
+ 3.70213660e-12 7.18698689e-12 1.37806462e-11 2.61015606e-11
+ 4.88407026e-11 9.02940187e-11 1.64945227e-10 2.97759320e-10
+ 5.31222265e-10 9.36725597e-10 1.63272592e-09 2.81331492e-09
+ 4.79255298e-09 8.07232221e-09 1.34447522e-08 2.21447122e-08
+ 3.60737191e-08 5.81241792e-08 9.26424339e-08 1.46080869e-07
+ 2.27903513e-07 3.51826096e-07 5.37490253e-07 8.12691938e-07
+ 1.21630526e-06 1.80206364e-06 2.64337848e-06 3.83938952e-06
+ 5.52244737e-06 7.86722521e-06 1.11016390e-05 1.55197210e-05
+ 2.14965378e-05 2.95051645e-05 4.01356297e-05 5.41156149e-05
+ 7.23325484e-05 9.58565612e-05 1.25963591e-04 1.64157734e-04
+ 2.12191744e-04 2.72084435e-04 3.46133555e-04 4.36922642e-04
+ 5.47320286e-04 6.80470269e-04 8.39771132e-04 1.02884391e-03
+ 1.25148705e-03 1.51161792e-03 1.81320071e-03 2.16016105e-03
+ 2.55628842e-03 3.00512769e-03 3.50986222e-03 4.07319098e-03
+ 4.69720340e-03 5.38325537e-03 6.13185078e-03 6.94253293e-03
+ 7.81379010e-03 8.74297964e-03 9.72627461e-03 1.07586363e-02
+ 1.18338158e-02 1.29443855e-02 1.40818040e-02 1.52365108e-02
+ 1.63980538e-02 1.75552436e-02 1.86963349e-02 1.98092277e-02
+ 2.08816856e-02 2.19015649e-02 2.28570470e-02 2.37368708e-02
+ 2.45305546e-02 2.52286055e-02 2.58227069e-02 2.63058819e-02
+ 2.66726255e-02 2.69190048e-02 2.70427230e-02 2.70431468e-02
+ 2.69212968e-02 2.66798023e-02 2.63228218e-02 2.58559335e-02
+ 2.52859980e-02 2.46209988e-02 2.38698653e-02 2.30422830e-02
+ 2.21484969e-02 2.11991131e-02 2.02049027e-02 1.91766148e-02
+ 1.81247999e-02 1.70596496e-02 1.59908537e-02 1.49274781e-02
+ 1.38778643e-02 1.28495504e-02 1.18492158e-02 1.08826462e-02
+ 9.95472046e-03 9.06941545e-03 8.22982874e-03 7.43821581e-03
+ 6.69603985e-03 6.00403159e-03 5.36225679e-03 4.77018884e-03
+ 4.22678449e-03 3.73056029e-03 3.27966832e-03 2.87196926e-03
+ 2.50510175e-03 2.17654685e-03 1.88368682e-03 1.62385782e-03
+ 1.39439603e-03 1.19267727e-03 1.01615014e-03 8.62362815e-04
+ 7.28984117e-04 6.13818996e-04 5.14819183e-04 4.30089451e-04
+ 3.57890090e-04 2.96636174e-04 2.44894168e-04 2.01376414e-04
+ 1.64933969e-04 1.34548252e-04 1.09321889e-04 8.84690883e-05
+ 7.13058450e-05 5.72402093e-05 4.57628104e-05 3.64377856e-05
+ 2.88942229e-05 2.28181940e-05 1.79454219e-05 1.40546058e-05
+ 1.09614035e-05 8.51305652e-06 6.58363179e-06 5.06984223e-06
+ 3.88740588e-06 2.96789744e-06 2.25604544e-06 1.70742838e-06
+ 1.28652408e-06 9.65069256e-07 7.20688899e-07 5.35758258e-07
+ 3.96463970e-07 2.92034189e-07 2.14111140e-07 1.56242800e-07
+ 1.13473548e-07 8.20164279e-08 5.89923099e-08 4.22234763e-08
+ 3.00712316e-08 2.13088772e-08 1.50229190e-08 1.05366736e-08
+ 7.35153280e-09 5.10206269e-09 3.52187633e-09 2.41784362e-09
+ 1.65071416e-09 1.12064274e-09 7.56439866e-10 5.07635453e-10
+ 3.38653979e-10 2.24564649e-10 1.47999274e-10 9.69304896e-11
+ 6.30798928e-11 4.07845435e-11 2.61948496e-11 1.67105335e-11
+ 1.05865393e-11 6.65945510e-12 4.15884088e-12 2.57797546e-12
+ 1.58590713e-12 9.68019777e-13 5.86149300e-13 3.52009584e-13
+ 2.09614751e-13 1.23737963e-13 7.23908618e-14 4.19607053e-14
+ 2.40907711e-14 1.36952363e-14 7.70640619e-15 4.29081906e-15
+ 2.36301066e-15 1.28661131e-15 6.92294561e-16 3.67948769e-16
+ 1.93068569e-16 9.99587448e-17 5.10331864e-17 2.56757652e-17
+ 1.27211170e-17 6.20189148e-18 2.97273884e-18 1.39967436e-18
+ 6.46699393e-19 2.92893541e-19 1.29876264e-19 5.63107416e-20
+ 2.38376771e-20 9.83671414e-21 3.94978965e-21 1.54017352e-21
+ 5.81922521e-22 2.12502155e-22 7.47854994e-23 2.52813305e-23
+ 8.17829759e-24 2.52049441e-24 7.36218681e-25 2.02550289e-25
+ 5.20975674e-26 1.24136305e-26 2.70947808e-27 5.34177824e-28
+ 9.34771080e-29 1.42124095e-29 1.83244347e-30 1.95788241e-31
+ 1.70781603e-32 1.20967342e-33 6.96623933e-35 3.27537162e-36
+ 1.26327484e-37 4.01188430e-39 1.05125169e-40 2.27253743e-42
+ 4.04160743e-44 5.87814720e-46 6.92166502e-48 6.49695720e-50
+ 4.74747042e-52 2.60307807e-54 1.00768270e-56 2.45601388e-59
+ 2.83494681e-62]
+Convolution at k=19: [0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 6.01401392e-43
+ 1.22821774e-41 1.65074606e-40 1.70928819e-39 1.48668985e-38
+ 1.13355125e-37 7.77932744e-37 4.89328802e-36 2.85734878e-35
+ 1.56395072e-34 8.08375839e-34 3.96922022e-33 1.86032263e-32
+ 8.35579451e-32 3.60870813e-31 1.50283036e-30 6.04948399e-30
+ 2.35880627e-29 8.92548433e-29 3.28277621e-28 1.17528964e-27
+ 4.10108738e-27 1.39637505e-26 4.64411305e-26 1.51010369e-25
+ 4.80487583e-25 1.49714632e-24 4.57150634e-24 1.36882560e-23
+ 4.02150453e-23 1.15989389e-22 3.28591703e-22 9.14758701e-22
+ 2.50355031e-21 6.73877118e-21 1.78460598e-20 4.65149740e-20
+ 1.19364031e-19 3.01659235e-19 7.51010402e-19 1.84237230e-18
+ 4.45471293e-18 1.06187918e-17 2.49597146e-17 5.78633668e-17
+ 1.32328260e-16 2.98584150e-16 6.64847609e-16 1.46113562e-15
+ 3.16985959e-15 6.78945768e-15 1.43594209e-14 2.99918836e-14
+ 6.18715430e-14 1.26081506e-13 2.53825683e-13 5.04884242e-13
+ 9.92353791e-13 1.92754411e-12 3.70039599e-12 7.02165923e-12
+ 1.31710163e-11 2.44245201e-11 4.47814630e-11 8.11845679e-11
+ 1.45542050e-10 2.58035599e-10 4.52462783e-10 7.84754719e-10
+ 1.34638260e-09 2.28518938e-09 3.83734530e-09 6.37574044e-09
+ 1.04823320e-08 1.70549192e-08 2.74627118e-08 4.37700806e-08
+ 6.90542418e-08 1.07850505e-07 1.66768258e-07 2.55332133e-07
+ 3.87115753e-07 5.81249890e-07 8.64402332e-07 1.27334263e-06
+ 1.85822012e-06 2.68669708e-06 3.84908854e-06 5.46466488e-06
+ 7.68927013e-06 1.07243953e-05 1.48278213e-05 2.03259054e-05
+ 2.76275286e-05 3.72396482e-05 4.97843076e-05 6.60168444e-05
+ 8.68449161e-05 1.13347824e-04 1.46795471e-04 1.88666153e-04
+ 2.40662223e-04 3.04722593e-04 3.83030874e-04 4.78017970e-04
+ 5.92357873e-04 7.28955470e-04 8.90925275e-04 1.08156016e-03
+ 1.30428940e-03 1.56262567e-03 1.86010091e-03 2.20019157e-03
+ 2.58623403e-03 3.02133146e-03 3.50825408e-03 4.04933506e-03
+ 4.64636465e-03 5.30048579e-03 6.01209438e-03 6.78074773e-03
+ 7.60508483e-03 8.48276168e-03 9.41040509e-03 1.03835876e-02
+ 1.13968260e-02 1.24436050e-02 1.35164271e-02 1.46068889e-02
+ 1.57057829e-02 1.68032238e-02 1.78887964e-02 1.89517224e-02
+ 1.99810416e-02 2.09658040e-02 2.18952679e-02 2.27590974e-02
+ 2.35475565e-02 2.42516929e-02 2.48635068e-02 2.53761016e-02
+ 2.57838108e-02 2.60822991e-02 2.62686349e-02 2.63413330e-02
+ 2.63003660e-02 2.61471457e-02 2.58844750e-02 2.55164719e-02
+ 2.50484696e-02 2.44868940e-02 2.38391235e-02 2.31133356e-02
+ 2.23183431e-02 2.14634254e-02 2.05581587e-02 1.96122490e-02
+ 1.86353726e-02 1.76370250e-02 1.66263847e-02 1.56121903e-02
+ 1.46026356e-02 1.36052825e-02 1.26269919e-02 1.16738744e-02
+ 1.07512583e-02 9.86367506e-03 9.01486182e-03 8.20777727e-03
+ 7.44463127e-03 6.72692504e-03 6.05550041e-03 5.43059594e-03
+ 4.85190805e-03 4.31865526e-03 3.82964372e-03 3.38333262e-03
+ 2.97789798e-03 2.61129362e-03 2.28130857e-03 1.98561995e-03
+ 1.72184085e-03 1.48756300e-03 1.28039385e-03 1.09798826e-03
+ 9.38074765e-04 7.98476707e-04 6.77128628e-04 5.72088190e-04
+ 4.81544138e-04 4.03820748e-04 3.37379222e-04 2.80816511e-04
+ 2.32862010e-04 1.92372543e-04 1.58326049e-04 1.29814304e-04
+ 1.06035016e-04 8.62835448e-05 6.99444928e-05 5.64833616e-05
+ 4.54384197e-05 3.64129108e-05 2.90676885e-05 2.31143423e-05
+ 1.83088532e-05 1.44457965e-05 1.13530970e-05 8.88732439e-06
+ 6.92950816e-06 5.38144474e-06 4.16246296e-06 3.20661145e-06
+ 2.46022987e-06 1.87986577e-06 1.43049939e-06 1.08404054e-06
+ 8.18063740e-07 6.14750233e-07 4.60008401e-07 3.42746683e-07
+ 2.54276062e-07 1.87821807e-07 1.38126747e-07 1.01130688e-07
+ 7.37128103e-08 5.34857937e-08 3.86321791e-08 2.77750098e-08
+ 1.98761180e-08 1.41565815e-08 1.00348501e-08 7.07887468e-09
+ 4.96926905e-09 3.47111305e-09 2.41248606e-09 1.66821224e-09
+ 1.14761861e-09 7.85365218e-10 5.34613772e-10 3.61966298e-10
+ 2.43735729e-10 1.63213180e-10 1.08676687e-10 7.19483784e-11
+ 4.73549596e-11 3.09830449e-11 2.01487930e-11 1.30223728e-11
+ 8.36362870e-12 5.33712873e-12 3.38353699e-12 2.13070611e-12
+ 1.33260504e-12 8.27631807e-13 5.10340079e-13 3.12387810e-13
+ 1.89784782e-13 1.14413742e-13 6.84315469e-14 4.05978147e-14
+ 2.38846228e-14 1.39315339e-14 8.05440260e-15 4.61427761e-15
+ 2.61869423e-15 1.47178095e-15 8.18911108e-16 4.50934970e-16
+ 2.45647683e-16 1.32330451e-16 7.04643988e-17 3.70717926e-17
+ 1.92605039e-17 9.87670688e-18 4.99608377e-18 2.49145709e-18
+ 1.22403825e-18 5.92028408e-19 2.81681329e-19 1.31726922e-19
+ 6.04912832e-20 2.72507023e-20 1.20296747e-20 5.19757464e-21
+ 2.19506037e-21 9.04817824e-22 3.63453021e-22 1.42015168e-22
+ 5.38714094e-23 1.97948752e-23 7.02794961e-24 2.40408540e-24
+ 7.89775872e-25 2.48235032e-25 7.43251765e-26 2.10912718e-26
+ 5.63808742e-27 1.40951363e-27 3.26659797e-28 6.94292458e-29
+ 1.33558614e-29 2.28800893e-30 3.42380602e-31 4.38037490e-32
+ 4.69576276e-33 4.16040554e-34 3.02903148e-35 1.81252582e-36
+ 8.94286928e-38 3.65306361e-39 1.23991429e-40 3.50513130e-42
+ 8.25799867e-44 1.61912909e-45 2.63165006e-47 3.52128257e-49
+ 3.83694052e-51 3.34985031e-53 2.28712696e-55 1.17647432e-57
+ 4.28800697e-60 9.87208424e-63 1.07954774e-65]
+Convolution at k=20: [0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 0.00000000e+00 0.00000000e+00 0.00000000e+00 0.00000000e+00
+ 3.60591254e-45 7.75179933e-44 1.08351636e-42 1.16392182e-41
+ 1.04790602e-40 8.25815343e-40 5.85131854e-39 3.79663237e-38
+ 2.28532983e-37 1.28869832e-36 6.85935694e-36 3.46698417e-35
+ 1.67214746e-34 7.72682368e-34 3.43241256e-33 1.46999957e-32
+ 6.08450683e-32 2.43923024e-31 9.48880160e-31 3.58770023e-30
+ 1.32038614e-29 4.73620946e-29 1.65772494e-28 5.66763369e-28
+ 1.89457284e-27 6.19748656e-27 1.98543597e-26 6.23367471e-26
+ 1.91940390e-25 5.79943348e-25 1.72045823e-24 5.01378856e-24
+ 1.43601370e-23 4.04402874e-23 1.12024188e-22 3.05363989e-22
+ 8.19384226e-22 2.16504147e-21 5.63494132e-21 1.44505460e-20
+ 3.65233011e-20 9.10036183e-20 2.23591568e-19 5.41825408e-19
+ 1.29528051e-18 3.05532092e-18 7.11248697e-18 1.63431708e-17
+ 3.70745290e-17 8.30442966e-17 1.83698465e-16 4.01352612e-16
+ 8.66226867e-16 1.84705319e-15 3.89156096e-15 8.10246044e-15
+ 1.66727899e-14 3.39113739e-14 6.81826281e-14 1.35530488e-13
+ 2.66365018e-13 5.17648288e-13 9.94830074e-13 1.89085160e-12
+ 3.55465287e-12 6.61003842e-12 1.21594184e-11 2.21288031e-11
+ 3.98449277e-11 7.09890506e-11 1.25154293e-10 2.18357846e-10
+ 3.77044821e-10 6.44392854e-10 1.09012048e-09 1.82556368e-09
+ 3.02657249e-09 4.96786771e-09 8.07397635e-09 1.29938422e-08
+ 2.07088070e-08 3.26870170e-08 5.11015677e-08 7.91350012e-08
+ 1.21399233e-07 1.84507690e-07 2.77845432e-07 4.14593199e-07
+ 6.13072542e-07 8.98491108e-07 1.30517916e-06 1.87941999e-06
+ 2.68298677e-06 3.79750583e-06 5.32976940e-06 7.41811862e-06
+ 1.02400076e-05 1.40208410e-05 1.90441471e-05 2.56631093e-05
+ 3.43134204e-05 4.55273606e-05 5.99489164e-05 7.83496645e-05
+ 1.01645042e-04 1.30910516e-04 1.67397049e-04 2.12545156e-04
+ 2.67996730e-04 3.35603762e-04 4.17432974e-04 5.15765402e-04
+ 6.33089928e-04 7.72089856e-04 9.35621675e-04 1.12668535e-03
+ 1.34838566e-03 1.60388434e-03 1.89634311e-03 2.22885804e-03
+ 2.60438591e-03 3.02566386e-03 3.49512371e-03 4.01480299e-03
+ 4.58625474e-03 5.21045868e-03 5.88773644e-03 6.61767359e-03
+ 7.39905150e-03 8.22979161e-03 9.10691491e-03 1.00265188e-02
+ 1.09837736e-02 1.19729393e-02 1.29874048e-02 1.40197488e-02
+ 1.50618224e-02 1.61048519e-02 1.71395613e-02 1.81563101e-02
+ 1.91452459e-02 2.00964657e-02 2.10001849e-02 2.18469070e-02
+ 2.26275926e-02 2.33338213e-02 2.39579431e-02 2.44932167e-02
+ 2.49339285e-02 2.52754928e-02 2.55145278e-02 2.56489078e-02
+ 2.56777893e-02 2.56016119e-02 2.54220735e-02 2.51420807e-02
+ 2.47656781e-02 2.42979558e-02 2.37449405e-02 2.31134721e-02
+ 2.24110688e-02 2.16457857e-02 2.08260685e-02 1.99606073e-02
+ 1.90581935e-02 1.81275818e-02 1.71773617e-02 1.62158393e-02
+ 1.52509316e-02 1.42900762e-02 1.33401548e-02 1.24074331e-02
+ 1.14975165e-02 1.06153209e-02 9.76505838e-03 8.95023691e-03
+ 8.17367229e-03 7.43751147e-03 6.74326532e-03 6.09184940e-03
+ 5.48363110e-03 4.91848131e-03 4.39582924e-03 3.91471893e-03
+ 3.47386589e-03 3.07171292e-03 2.70648399e-03 2.37623522e-03
+ 2.07890246e-03 1.81234482e-03 1.57438381e-03 1.36283800e-03
+ 1.17555287e-03 1.01042626e-03 8.65429202e-04 7.38622581e-04
+ 6.28169882e-04 5.32346291e-04 4.49544581e-04 3.78278144e-04
+ 3.17181560e-04 2.65009095e-04 2.20631475e-04 1.83031309e-04
+ 1.51297454e-04 1.24618628e-04 1.02276513e-04 8.36385794e-05
+ 6.81508138e-05 5.53305096e-05 4.47592460e-05 3.60761547e-05
+ 2.89715476e-05 2.31809577e-05 1.84796266e-05 1.46774533e-05
+ 1.16144092e-05 9.15641112e-06 7.19163527e-06 5.62725144e-06
+ 4.38654897e-06 3.40642581e-06 2.63520901e-06 2.03077517e-06
+ 1.55893965e-06 1.19208447e-06 9.07996470e-07 6.88889167e-07
+ 5.20583972e-07 3.91828615e-07 2.93732894e-07 2.19304089e-07
+ 1.63066466e-07 1.20751318e-07 8.90457740e-08 6.53902901e-08
+ 4.78162382e-08 3.48163115e-08 2.52416452e-08 1.82205603e-08
+ 1.30947094e-08 9.36915003e-09 6.67350577e-09 4.73190376e-09
+ 3.33982271e-09 2.34635272e-09 1.64067039e-09 1.14177975e-09
+ 7.90769749e-10 5.45000823e-10 3.73762065e-10 2.55043699e-10
+ 1.73150765e-10 1.16947913e-10 7.85751518e-11 5.25131005e-11
+ 3.49062540e-11 2.30756451e-11 1.51697931e-11 9.91605795e-12
+ 6.44449007e-12 4.16373116e-12 2.67407650e-12 1.70691609e-12
+ 1.08279320e-12 6.82525925e-13 4.27440521e-13 2.65922391e-13
+ 1.64321183e-13 1.00838216e-13 6.14440443e-14 3.71692580e-14
+ 2.23182394e-14 1.32992211e-14 7.86314874e-15 4.61189854e-15
+ 2.68274709e-15 1.54737168e-15 8.84742038e-16 5.01339020e-16
+ 2.81460794e-16 1.56511789e-16 8.61751351e-17 4.69652729e-17
+ 2.53265647e-17 1.35087283e-17 7.12384170e-18 3.71266871e-18
+ 1.91129345e-18 9.71449414e-19 4.87226616e-19 2.40995301e-19
+ 1.17484982e-19 5.64105821e-20 2.66580327e-20 1.23892186e-20
+ 5.65768089e-21 2.53635662e-21 1.11512284e-21 4.80285136e-22
+ 2.02403739e-22 8.33507178e-23 3.34921281e-23 1.31106527e-23
+ 4.99096045e-24 1.84401586e-24 6.59790299e-25 2.28048508e-25
+ 7.59284035e-26 2.42739469e-26 7.42386861e-27 2.16278508e-27
+ 5.97192295e-28 1.55369352e-28 3.78188439e-29 8.54017596e-30
+ 1.77089193e-30 3.33032080e-31 5.59561223e-32 8.25407904e-33
+ 1.04874475e-33 1.12750775e-34 1.01286669e-35 7.55773407e-37
+ 4.68117257e-38 2.41250633e-39 1.03811753e-40 3.74236573e-42
+ 1.13303816e-43 2.88430821e-45 6.17051787e-47 1.10667206e-48
+ 1.65596400e-50 2.05149726e-52 2.08007908e-54 1.69737941e-56
+ 1.08749721e-58 5.26806635e-61 1.81404194e-63 3.95714703e-66
+ 4.11091781e-69]
+All tests passed.</code></pre>
+</div>
+</div>
+<div id="0900f121" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> typing <span class="im">import</span> List, Generator, Tuple</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> calculate_objective_serv_time_lookup(schedule: List[<span class="bu">int</span>], d: <span class="bu">int</span>, q: <span class="bu">float</span>, convolutions: <span class="bu">dict</span>) <span class="op">-&gt;</span> Tuple[<span class="bu">float</span>, <span class="bu">float</span>]:</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co">    Calculate the objective value based on the given schedule and parameters using precomputed convolutions.</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co">    This function uses precomputed convolutions of the service time distribution,</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="co">    starting from the 1-fold convolution (key 1) which contains the adjusted service time distribution.</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co">    Parameters:</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="co">    schedule (List[int]): A list representing the number of patients scheduled in each time slot.</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="co">    d (int): Duration threshold or maximum allowed service time per slot.</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="co">    q (float): No-show probability.</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="co">    convolutions (dict): Precomputed convolutions of the service time distribution, with key 1 containing the adjusted service time distribution.</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="co">    Returns:</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="co">    Tuple[float, float]: </span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="co">        - ewt (float): The sum of expected waiting times.</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a><span class="co">        - esp (float): The expected spillover time (overtime).</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>    sp <span class="op">=</span> np.array([<span class="dv">1</span>], dtype<span class="op">=</span>np.float64)  <span class="co"># Initial service process (no waiting time)</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>    ewt <span class="op">=</span> <span class="dv">0</span>  <span class="co"># Total expected waiting time</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> x <span class="kw">in</span> schedule:</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> x <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>            <span class="co"># No patients in this time slot</span></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Adjust sp for the duration d (service process moves ahead)</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>            sp_new <span class="op">=</span> []</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>            sp_new.append(np.<span class="bu">sum</span>(sp[:d <span class="op">+</span> <span class="dv">1</span>]))</span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>            sp_new.extend(sp[d <span class="op">+</span> <span class="dv">1</span>:])</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>            sp <span class="op">=</span> np.array(sp_new)</span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Patients are scheduled in this time slot</span></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>            wt_temp <span class="op">=</span> [sp.copy()]</span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Add expected waiting time for the first patient</span></span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>            ewt <span class="op">+=</span> np.dot(<span class="bu">range</span>(<span class="bu">len</span>(sp)), sp)</span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>            <span class="co"># For each additional patient</span></span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, x):</span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>                <span class="co"># The waiting time distribution for the ith patient is the convolution</span></span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>                <span class="co"># of the previous patient's waiting time with s (adjusted service time distribution)</span></span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>                conv_s <span class="op">=</span> convolutions.get(<span class="dv">1</span>)  <span class="co"># Adjusted service time distribution</span></span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>                wt <span class="op">=</span> np.convolve(wt_temp[i <span class="op">-</span> <span class="dv">1</span>], conv_s)</span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>                wt_temp.append(wt)</span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>                ewt <span class="op">+=</span> np.dot(<span class="bu">range</span>(<span class="bu">len</span>(wt)), wt)</span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Update sp for the next time slot</span></span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>            conv_s <span class="op">=</span> convolutions.get(<span class="dv">1</span>)  <span class="co"># Adjusted service time distribution</span></span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>            sp <span class="op">=</span> np.convolve(wt_temp[<span class="op">-</span><span class="dv">1</span>], conv_s)</span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Adjust sp for duration d</span></span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a>            sp_new <span class="op">=</span> []</span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a>            sp_new.append(np.<span class="bu">sum</span>(sp[:d <span class="op">+</span> <span class="dv">1</span>]))</span>
+<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a>            sp_new.extend(sp[d <span class="op">+</span> <span class="dv">1</span>:])</span>
+<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a>            sp <span class="op">=</span> np.array(sp_new)</span>
+<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Expected spillover time</span></span>
+<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a>    esp <span class="op">=</span> np.dot(<span class="bu">range</span>(<span class="bu">len</span>(sp)), sp)</span>
+<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> ewt, esp</span>
+<span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-57"><a href="#cb5-57" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> calculate_objective(schedule: List[<span class="bu">int</span>], s: List[<span class="bu">float</span>], d: <span class="bu">int</span>, q: <span class="bu">float</span>) <span class="op">-&gt;</span> Tuple[<span class="bu">float</span>, <span class="bu">float</span>]:</span>
+<span id="cb5-58"><a href="#cb5-58" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
+<span id="cb5-59"><a href="#cb5-59" aria-hidden="true" tabindex="-1"></a><span class="co">    Calculate the objective value based on the given schedule and parameters.</span></span>
+<span id="cb5-60"><a href="#cb5-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-61"><a href="#cb5-61" aria-hidden="true" tabindex="-1"></a><span class="co">    This function adjusts the service times distribution for no-shows, calculates </span></span>
+<span id="cb5-62"><a href="#cb5-62" aria-hidden="true" tabindex="-1"></a><span class="co">    the waiting times for all patients in the schedule, sums the expected </span></span>
+<span id="cb5-63"><a href="#cb5-63" aria-hidden="true" tabindex="-1"></a><span class="co">    waiting times, and calculates the spillover time for the last interval (overtime).</span></span>
+<span id="cb5-64"><a href="#cb5-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-65"><a href="#cb5-65" aria-hidden="true" tabindex="-1"></a><span class="co">    Parameters:</span></span>
+<span id="cb5-66"><a href="#cb5-66" aria-hidden="true" tabindex="-1"></a><span class="co">    schedule (List[int]): A list representing the number of patients scheduled in each time slot.</span></span>
+<span id="cb5-67"><a href="#cb5-67" aria-hidden="true" tabindex="-1"></a><span class="co">    s (List[float]): Service times probability distribution.</span></span>
+<span id="cb5-68"><a href="#cb5-68" aria-hidden="true" tabindex="-1"></a><span class="co">    d (int): Duration threshold or maximum allowed service time per slot.</span></span>
+<span id="cb5-69"><a href="#cb5-69" aria-hidden="true" tabindex="-1"></a><span class="co">    q (float): No-show probability.</span></span>
+<span id="cb5-70"><a href="#cb5-70" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-71"><a href="#cb5-71" aria-hidden="true" tabindex="-1"></a><span class="co">    Returns:</span></span>
+<span id="cb5-72"><a href="#cb5-72" aria-hidden="true" tabindex="-1"></a><span class="co">    Tuple[float, float]: </span></span>
+<span id="cb5-73"><a href="#cb5-73" aria-hidden="true" tabindex="-1"></a><span class="co">        - ewt (float): The sum of expected waiting times.</span></span>
+<span id="cb5-74"><a href="#cb5-74" aria-hidden="true" tabindex="-1"></a><span class="co">        - esp (float): The expected spillover time (overtime).</span></span>
+<span id="cb5-75"><a href="#cb5-75" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb5-76"><a href="#cb5-76" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Adjust the service time distribution for no-shows</span></span>
+<span id="cb5-77"><a href="#cb5-77" aria-hidden="true" tabindex="-1"></a>    s <span class="op">=</span> service_time_with_no_shows(s, q)</span>
+<span id="cb5-78"><a href="#cb5-78" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Initialize the service process (probability distribution of waiting times)</span></span>
+<span id="cb5-79"><a href="#cb5-79" aria-hidden="true" tabindex="-1"></a>    sp <span class="op">=</span> np.array([<span class="dv">1</span>], dtype<span class="op">=</span>np.float64)</span>
+<span id="cb5-80"><a href="#cb5-80" aria-hidden="true" tabindex="-1"></a>    wt_list <span class="op">=</span> []</span>
+<span id="cb5-81"><a href="#cb5-81" aria-hidden="true" tabindex="-1"></a>    ewt <span class="op">=</span> <span class="dv">0</span>  <span class="co"># Expected waiting time</span></span>
+<span id="cb5-82"><a href="#cb5-82" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> x <span class="kw">in</span> schedule:</span>
+<span id="cb5-83"><a href="#cb5-83" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> x <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb5-84"><a href="#cb5-84" aria-hidden="true" tabindex="-1"></a>            <span class="co"># No patients in this time slot</span></span>
+<span id="cb5-85"><a href="#cb5-85" aria-hidden="true" tabindex="-1"></a>            wt_temp <span class="op">=</span> [np.array(sp)]</span>
+<span id="cb5-86"><a href="#cb5-86" aria-hidden="true" tabindex="-1"></a>            wt_list.append([])</span>
+<span id="cb5-87"><a href="#cb5-87" aria-hidden="true" tabindex="-1"></a>            sp <span class="op">=</span> []</span>
+<span id="cb5-88"><a href="#cb5-88" aria-hidden="true" tabindex="-1"></a>            sp.append(np.<span class="bu">sum</span>(wt_temp[<span class="op">-</span><span class="dv">1</span>][:d <span class="op">+</span> <span class="dv">1</span>]))</span>
+<span id="cb5-89"><a href="#cb5-89" aria-hidden="true" tabindex="-1"></a>            sp.extend(wt_temp[<span class="op">-</span><span class="dv">1</span>][d <span class="op">+</span> <span class="dv">1</span>:])</span>
+<span id="cb5-90"><a href="#cb5-90" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb5-91"><a href="#cb5-91" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Patients are scheduled in this time slot</span></span>
+<span id="cb5-92"><a href="#cb5-92" aria-hidden="true" tabindex="-1"></a>            wt_temp <span class="op">=</span> [np.array(sp)]</span>
+<span id="cb5-93"><a href="#cb5-93" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Add expected waiting time for the first patient</span></span>
+<span id="cb5-94"><a href="#cb5-94" aria-hidden="true" tabindex="-1"></a>            ewt <span class="op">+=</span> np.dot(<span class="bu">range</span>(<span class="bu">len</span>(sp)), sp)</span>
+<span id="cb5-95"><a href="#cb5-95" aria-hidden="true" tabindex="-1"></a>            <span class="co"># For each additional patient</span></span>
+<span id="cb5-96"><a href="#cb5-96" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(x <span class="op">-</span> <span class="dv">1</span>):</span>
+<span id="cb5-97"><a href="#cb5-97" aria-hidden="true" tabindex="-1"></a>                <span class="co"># Convolve the waiting time with the service time distribution</span></span>
+<span id="cb5-98"><a href="#cb5-98" aria-hidden="true" tabindex="-1"></a>                wt <span class="op">=</span> np.convolve(wt_temp[i], s)</span>
+<span id="cb5-99"><a href="#cb5-99" aria-hidden="true" tabindex="-1"></a>                wt_temp.append(wt)</span>
+<span id="cb5-100"><a href="#cb5-100" aria-hidden="true" tabindex="-1"></a>                <span class="co"># Add expected waiting time</span></span>
+<span id="cb5-101"><a href="#cb5-101" aria-hidden="true" tabindex="-1"></a>                ewt <span class="op">+=</span> np.dot(<span class="bu">range</span>(<span class="bu">len</span>(wt)), wt)</span>
+<span id="cb5-102"><a href="#cb5-102" aria-hidden="true" tabindex="-1"></a>            wt_list.append(wt_temp)</span>
+<span id="cb5-103"><a href="#cb5-103" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Update the service process for the next time slot</span></span>
+<span id="cb5-104"><a href="#cb5-104" aria-hidden="true" tabindex="-1"></a>            sp <span class="op">=</span> []</span>
+<span id="cb5-105"><a href="#cb5-105" aria-hidden="true" tabindex="-1"></a>            convolved <span class="op">=</span> np.convolve(wt_temp[<span class="op">-</span><span class="dv">1</span>], s)</span>
+<span id="cb5-106"><a href="#cb5-106" aria-hidden="true" tabindex="-1"></a>            sp.append(np.<span class="bu">sum</span>(convolved[:d <span class="op">+</span> <span class="dv">1</span>]))</span>
+<span id="cb5-107"><a href="#cb5-107" aria-hidden="true" tabindex="-1"></a>            sp.extend(convolved[d <span class="op">+</span> <span class="dv">1</span>:])</span>
+<span id="cb5-108"><a href="#cb5-108" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Calculate expected spillover time</span></span>
+<span id="cb5-109"><a href="#cb5-109" aria-hidden="true" tabindex="-1"></a>    esp <span class="op">=</span> np.dot(<span class="bu">range</span>(<span class="bu">len</span>(sp)), sp)</span>
+<span id="cb5-110"><a href="#cb5-110" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> ewt, esp</span>
+<span id="cb5-111"><a href="#cb5-111" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-112"><a href="#cb5-112" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_calculate_objective_serv_time_lookup_with_timing():</span>
+<span id="cb5-113"><a href="#cb5-113" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
+<span id="cb5-114"><a href="#cb5-114" aria-hidden="true" tabindex="-1"></a><span class="co">    Test the calculate_objective_serv_time_lookup function by comparing its outputs</span></span>
+<span id="cb5-115"><a href="#cb5-115" aria-hidden="true" tabindex="-1"></a><span class="co">    and execution time with the original calculate_objective function.</span></span>
+<span id="cb5-116"><a href="#cb5-116" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-117"><a href="#cb5-117" aria-hidden="true" tabindex="-1"></a><span class="co">    The test verifies that both functions produce the same expected waiting time (ewt)</span></span>
+<span id="cb5-118"><a href="#cb5-118" aria-hidden="true" tabindex="-1"></a><span class="co">    and expected spillover time (esp) for a sample schedule and parameters, and compares</span></span>
+<span id="cb5-119"><a href="#cb5-119" aria-hidden="true" tabindex="-1"></a><span class="co">    their execution times.</span></span>
+<span id="cb5-120"><a href="#cb5-120" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb5-121"><a href="#cb5-121" aria-hidden="true" tabindex="-1"></a>    <span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb5-122"><a href="#cb5-122" aria-hidden="true" tabindex="-1"></a>    <span class="im">import</span> time</span>
+<span id="cb5-123"><a href="#cb5-123" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-124"><a href="#cb5-124" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Sample service time distribution (probabilities)</span></span>
+<span id="cb5-125"><a href="#cb5-125" aria-hidden="true" tabindex="-1"></a>    s <span class="op">=</span> [<span class="fl">0.</span>, <span class="fl">0.00599585</span>, <span class="fl">0.00644478</span>, <span class="fl">0.02427306</span>, <span class="fl">0.04753406</span>, <span class="fl">0.07355202</span>, <span class="fl">0.16864656</span>, <span class="fl">0.12338866</span>, <span class="fl">0.10182152</span>, <span class="fl">0.09778246</span>, <span class="fl">0.07283463</span>, <span class="fl">0.05794873</span>, <span class="fl">0.05378825</span>, <span class="fl">0.04945164</span>, <span class="fl">0.04805953</span>, <span class="fl">0.02797309</span>, <span class="fl">0.02179657</span>, <span class="fl">0.0183278</span>, <span class="fl">0.0003808</span> ]</span>
+<span id="cb5-126"><a href="#cb5-126" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-127"><a href="#cb5-127" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Normalize the service time distribution to sum to 1</span></span>
+<span id="cb5-128"><a href="#cb5-128" aria-hidden="true" tabindex="-1"></a>    total_prob <span class="op">=</span> <span class="bu">sum</span>(s)</span>
+<span id="cb5-129"><a href="#cb5-129" aria-hidden="true" tabindex="-1"></a>    s <span class="op">=</span> [prob <span class="op">/</span> total_prob <span class="cf">for</span> prob <span class="kw">in</span> s]</span>
+<span id="cb5-130"><a href="#cb5-130" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-131"><a href="#cb5-131" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Sample schedule: Number of patients scheduled in each time slot</span></span>
+<span id="cb5-132"><a href="#cb5-132" aria-hidden="true" tabindex="-1"></a>    schedule <span class="op">=</span> [<span class="dv">4</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">0</span>, <span class="dv">3</span>, <span class="dv">0</span>, <span class="dv">4</span>]</span>
+<span id="cb5-133"><a href="#cb5-133" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-134"><a href="#cb5-134" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Parameters</span></span>
+<span id="cb5-135"><a href="#cb5-135" aria-hidden="true" tabindex="-1"></a>    d <span class="op">=</span> <span class="dv">5</span>       <span class="co"># Duration threshold or maximum allowed service time per slot</span></span>
+<span id="cb5-136"><a href="#cb5-136" aria-hidden="true" tabindex="-1"></a>    q <span class="op">=</span> <span class="fl">0.1</span>      <span class="co"># No-show probability</span></span>
+<span id="cb5-137"><a href="#cb5-137" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-138"><a href="#cb5-138" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Precompute convolutions for the maximum number of patients in any time slot</span></span>
+<span id="cb5-139"><a href="#cb5-139" aria-hidden="true" tabindex="-1"></a>    N <span class="op">=</span> <span class="bu">max</span>(schedule)</span>
+<span id="cb5-140"><a href="#cb5-140" aria-hidden="true" tabindex="-1"></a>    convolutions <span class="op">=</span> compute_convolutions(s, N, q)</span>
+<span id="cb5-141"><a href="#cb5-141" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-142"><a href="#cb5-142" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Measure execution time for the original function</span></span>
+<span id="cb5-143"><a href="#cb5-143" aria-hidden="true" tabindex="-1"></a>    start_time_original <span class="op">=</span> time.time()</span>
+<span id="cb5-144"><a href="#cb5-144" aria-hidden="true" tabindex="-1"></a>    ewt_original, esp_original <span class="op">=</span> calculate_objective(schedule, s, d, q)</span>
+<span id="cb5-145"><a href="#cb5-145" aria-hidden="true" tabindex="-1"></a>    end_time_original <span class="op">=</span> time.time()</span>
+<span id="cb5-146"><a href="#cb5-146" aria-hidden="true" tabindex="-1"></a>    time_original <span class="op">=</span> end_time_original <span class="op">-</span> start_time_original</span>
+<span id="cb5-147"><a href="#cb5-147" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-148"><a href="#cb5-148" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Measure execution time for the lookup function</span></span>
+<span id="cb5-149"><a href="#cb5-149" aria-hidden="true" tabindex="-1"></a>    start_time_lookup <span class="op">=</span> time.time()</span>
+<span id="cb5-150"><a href="#cb5-150" aria-hidden="true" tabindex="-1"></a>    ewt_lookup, esp_lookup <span class="op">=</span> calculate_objective_serv_time_lookup(schedule, d, q, convolutions)</span>
+<span id="cb5-151"><a href="#cb5-151" aria-hidden="true" tabindex="-1"></a>    end_time_lookup <span class="op">=</span> time.time()</span>
+<span id="cb5-152"><a href="#cb5-152" aria-hidden="true" tabindex="-1"></a>    time_lookup <span class="op">=</span> end_time_lookup <span class="op">-</span> start_time_lookup</span>
+<span id="cb5-153"><a href="#cb5-153" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-154"><a href="#cb5-154" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Define a tolerance for floating-point comparisons</span></span>
+<span id="cb5-155"><a href="#cb5-155" aria-hidden="true" tabindex="-1"></a>    tolerance <span class="op">=</span> <span class="fl">1e-6</span></span>
+<span id="cb5-156"><a href="#cb5-156" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-157"><a href="#cb5-157" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Check if the expected waiting times are approximately equal</span></span>
+<span id="cb5-158"><a href="#cb5-158" aria-hidden="true" tabindex="-1"></a>    ewt_match <span class="op">=</span> <span class="bu">abs</span>(ewt_original <span class="op">-</span> ewt_lookup) <span class="op">&lt;</span> tolerance</span>
+<span id="cb5-159"><a href="#cb5-159" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Check if the expected spillover times are approximately equal</span></span>
+<span id="cb5-160"><a href="#cb5-160" aria-hidden="true" tabindex="-1"></a>    esp_match <span class="op">=</span> <span class="bu">abs</span>(esp_original <span class="op">-</span> esp_lookup) <span class="op">&lt;</span> tolerance</span>
+<span id="cb5-161"><a href="#cb5-161" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-162"><a href="#cb5-162" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Print the results</span></span>
+<span id="cb5-163"><a href="#cb5-163" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Original Function Output:"</span>)</span>
+<span id="cb5-164"><a href="#cb5-164" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Expected Waiting Time (ewt): </span><span class="sc">{</span>ewt_original<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-165"><a href="#cb5-165" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Expected Spillover Time (esp): </span><span class="sc">{</span>esp_original<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-166"><a href="#cb5-166" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Execution Time: </span><span class="sc">{</span>time_original<span class="sc">:.6f}</span><span class="ss"> seconds</span><span class="ch">\n</span><span class="ss">"</span>)</span>
+<span id="cb5-167"><a href="#cb5-167" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-168"><a href="#cb5-168" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Lookup Function Output:"</span>)</span>
+<span id="cb5-169"><a href="#cb5-169" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Expected Waiting Time (ewt): </span><span class="sc">{</span>ewt_lookup<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-170"><a href="#cb5-170" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Expected Spillover Time (esp): </span><span class="sc">{</span>esp_lookup<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-171"><a href="#cb5-171" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Execution Time: </span><span class="sc">{</span>time_lookup<span class="sc">:.6f}</span><span class="ss"> seconds</span><span class="ch">\n</span><span class="ss">"</span>)</span>
+<span id="cb5-172"><a href="#cb5-172" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-173"><a href="#cb5-173" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Assert that both outputs match within the defined tolerance</span></span>
+<span id="cb5-174"><a href="#cb5-174" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> ewt_match, <span class="st">"Expected Waiting Times do not match."</span></span>
+<span id="cb5-175"><a href="#cb5-175" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> esp_match, <span class="st">"Expected Spillover Times do not match."</span></span>
+<span id="cb5-176"><a href="#cb5-176" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-177"><a href="#cb5-177" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Test passed: The outputs of both functions match within the defined tolerance."</span>)</span>
+<span id="cb5-178"><a href="#cb5-178" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-179"><a href="#cb5-179" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Compare execution times</span></span>
+<span id="cb5-180"><a href="#cb5-180" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> time_lookup <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb5-181"><a href="#cb5-181" aria-hidden="true" tabindex="-1"></a>        speedup <span class="op">=</span> time_original <span class="op">/</span> time_lookup</span>
+<span id="cb5-182"><a href="#cb5-182" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"The lookup function is </span><span class="sc">{</span>speedup<span class="sc">:.2f}</span><span class="ss"> times faster than the original function."</span>)</span>
+<span id="cb5-183"><a href="#cb5-183" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb5-184"><a href="#cb5-184" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="st">"Execution time for the lookup function is too small to measure speedup."</span>)</span>
+<span id="cb5-185"><a href="#cb5-185" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-186"><a href="#cb5-186" aria-hidden="true" tabindex="-1"></a><span class="co"># Run the test function</span></span>
+<span id="cb5-187"><a href="#cb5-187" aria-hidden="true" tabindex="-1"></a>test_calculate_objective_serv_time_lookup_with_timing()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Original Function Output:
+Expected Waiting Time (ewt): 905.3952652724608
+Expected Spillover Time (esp): 80.99581724289584
+Execution Time: 0.001578 seconds
+
+Lookup Function Output:
+Expected Waiting Time (ewt): 905.3952652724608
+Expected Spillover Time (esp): 80.99581724289584
+Execution Time: 0.001102 seconds
+
+Test passed: The outputs of both functions match within the defined tolerance.
+The lookup function is 1.43 times faster than the original function.</code></pre>
+</div>
+</div>
+<div id="bf9fcb4c" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> build_welch_bailey_schedule(N, T):</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co">    Build a schedule based on the Welch and Bailey (1952) heuristic.</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="co">    Parameters:</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="co">    N (int): Number of patients to be scheduled.</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co">    T (int): Number of time intervals in the schedule.</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="co">    Returns:</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="co">    list: A schedule of length T where each item represents the number of patients scheduled</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="co">          at the corresponding time interval.</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Initialize the schedule with zeros</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    schedule <span class="op">=</span> [<span class="dv">0</span>] <span class="op">*</span> T</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Schedule the first two patients at the beginning</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>    schedule[<span class="dv">0</span>] <span class="op">=</span> <span class="dv">2</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>    remaining_patients <span class="op">=</span> N <span class="op">-</span> <span class="dv">2</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Distribute patients in the middle time slots with gaps</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> t <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, T <span class="op">-</span> <span class="dv">1</span>):</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> remaining_patients <span class="op">&lt;=</span> <span class="dv">0</span>:</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>            <span class="cf">break</span></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> t <span class="op">%</span> <span class="dv">2</span> <span class="op">==</span> <span class="dv">1</span>:  <span class="co"># Create gaps (only schedule patients at odd time slots)</span></span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>            schedule[t] <span class="op">=</span> <span class="dv">1</span></span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>            remaining_patients <span class="op">-=</span> <span class="dv">1</span></span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Push any remaining patients to the last time slot</span></span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>    schedule[<span class="op">-</span><span class="dv">1</span>] <span class="op">+=</span> remaining_patients</span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> schedule</span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_build_welch_bailey_schedule():</span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a><span class="co">    Test the build_welch_bailey_schedule function with multiple test cases.</span></span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Test case 1: Simple case with N &lt; T</span></span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a>    N, T <span class="op">=</span> <span class="dv">10</span>, <span class="dv">15</span></span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a>    schedule <span class="op">=</span> build_welch_bailey_schedule(N, T)</span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">len</span>(schedule) <span class="op">==</span> T, <span class="ss">f"Failed: Expected length </span><span class="sc">{</span>T<span class="sc">}</span><span class="ss">, got </span><span class="sc">{</span><span class="bu">len</span>(schedule)<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">sum</span>(schedule) <span class="op">==</span> N, <span class="ss">f"Failed: Expected sum </span><span class="sc">{</span>N<span class="sc">}</span><span class="ss">, got </span><span class="sc">{</span><span class="bu">sum</span>(schedule)<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> schedule[<span class="dv">0</span>] <span class="op">==</span> <span class="dv">2</span>, <span class="st">"Failed: First slot should have 2 patients"</span></span>
+<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">all</span>(schedule[i] <span class="op">==</span> <span class="dv">0</span> <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">2</span>, T <span class="op">-</span> <span class="dv">1</span>, <span class="dv">2</span>)), <span class="st">"Failed: Gaps not created correctly"</span></span>
+<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Test case 2: Exact fit of N and T</span></span>
+<span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a>    N, T <span class="op">=</span> <span class="dv">7</span>, <span class="dv">7</span></span>
+<span id="cb7-47"><a href="#cb7-47" aria-hidden="true" tabindex="-1"></a>    schedule <span class="op">=</span> build_welch_bailey_schedule(N, T)</span>
+<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">len</span>(schedule) <span class="op">==</span> T, <span class="ss">f"Failed: Expected length </span><span class="sc">{</span>T<span class="sc">}</span><span class="ss">, got </span><span class="sc">{</span><span class="bu">len</span>(schedule)<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">sum</span>(schedule) <span class="op">==</span> N, <span class="ss">f"Failed: Expected sum </span><span class="sc">{</span>N<span class="sc">}</span><span class="ss">, got </span><span class="sc">{</span><span class="bu">sum</span>(schedule)<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-51"><a href="#cb7-51" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Test case 3: N &gt; T</span></span>
+<span id="cb7-52"><a href="#cb7-52" aria-hidden="true" tabindex="-1"></a>    N, T <span class="op">=</span> <span class="dv">20</span>, <span class="dv">10</span></span>
+<span id="cb7-53"><a href="#cb7-53" aria-hidden="true" tabindex="-1"></a>    schedule <span class="op">=</span> build_welch_bailey_schedule(N, T)</span>
+<span id="cb7-54"><a href="#cb7-54" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">len</span>(schedule) <span class="op">==</span> T, <span class="ss">f"Failed: Expected length </span><span class="sc">{</span>T<span class="sc">}</span><span class="ss">, got </span><span class="sc">{</span><span class="bu">len</span>(schedule)<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb7-55"><a href="#cb7-55" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">sum</span>(schedule) <span class="op">==</span> N, <span class="ss">f"Failed: Expected sum </span><span class="sc">{</span>N<span class="sc">}</span><span class="ss">, got </span><span class="sc">{</span><span class="bu">sum</span>(schedule)<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb7-56"><a href="#cb7-56" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> schedule[<span class="op">-</span><span class="dv">1</span>] <span class="op">&gt;</span> <span class="dv">1</span>, <span class="st">"Failed: Excess patients not pushed to the last interval"</span></span>
+<span id="cb7-57"><a href="#cb7-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-58"><a href="#cb7-58" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Test case 4: N is small</span></span>
+<span id="cb7-59"><a href="#cb7-59" aria-hidden="true" tabindex="-1"></a>    N, T <span class="op">=</span> <span class="dv">3</span>, <span class="dv">10</span></span>
+<span id="cb7-60"><a href="#cb7-60" aria-hidden="true" tabindex="-1"></a>    schedule <span class="op">=</span> build_welch_bailey_schedule(N, T)</span>
+<span id="cb7-61"><a href="#cb7-61" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">len</span>(schedule) <span class="op">==</span> T, <span class="ss">f"Failed: Expected length </span><span class="sc">{</span>T<span class="sc">}</span><span class="ss">, got </span><span class="sc">{</span><span class="bu">len</span>(schedule)<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb7-62"><a href="#cb7-62" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">sum</span>(schedule) <span class="op">==</span> N, <span class="ss">f"Failed: Expected sum </span><span class="sc">{</span>N<span class="sc">}</span><span class="ss">, got </span><span class="sc">{</span><span class="bu">sum</span>(schedule)<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb7-63"><a href="#cb7-63" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> schedule[<span class="dv">0</span>] <span class="op">==</span> <span class="dv">2</span>, <span class="st">"Failed: First slot should have 2 patients"</span></span>
+<span id="cb7-64"><a href="#cb7-64" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> schedule.count(<span class="dv">1</span>) <span class="op">==</span> <span class="dv">1</span>, <span class="st">"Failed: Only one remaining patient should be scheduled"</span></span>
+<span id="cb7-65"><a href="#cb7-65" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-66"><a href="#cb7-66" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Test case 5: N equals T</span></span>
+<span id="cb7-67"><a href="#cb7-67" aria-hidden="true" tabindex="-1"></a>    N, T <span class="op">=</span> <span class="dv">15</span>, <span class="dv">15</span></span>
+<span id="cb7-68"><a href="#cb7-68" aria-hidden="true" tabindex="-1"></a>    schedule <span class="op">=</span> build_welch_bailey_schedule(N, T)</span>
+<span id="cb7-69"><a href="#cb7-69" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">len</span>(schedule) <span class="op">==</span> T, <span class="ss">f"Failed: Expected length </span><span class="sc">{</span>T<span class="sc">}</span><span class="ss">, got </span><span class="sc">{</span><span class="bu">len</span>(schedule)<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb7-70"><a href="#cb7-70" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="bu">sum</span>(schedule) <span class="op">==</span> N, <span class="ss">f"Failed: Expected sum </span><span class="sc">{</span>N<span class="sc">}</span><span class="ss">, got </span><span class="sc">{</span><span class="bu">sum</span>(schedule)<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb7-71"><a href="#cb7-71" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-72"><a href="#cb7-72" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"All test cases passed!"</span>)</span>
+<span id="cb7-73"><a href="#cb7-73" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-74"><a href="#cb7-74" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-75"><a href="#cb7-75" aria-hidden="true" tabindex="-1"></a><span class="co"># Run the test function</span></span>
+<span id="cb7-76"><a href="#cb7-76" aria-hidden="true" tabindex="-1"></a>test_build_welch_bailey_schedule()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>All test cases passed!</code></pre>
+</div>
+</div>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

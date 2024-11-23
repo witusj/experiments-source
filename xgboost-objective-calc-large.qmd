@@ -37,6 +37,7 @@ import pickle
 ```
 
 ### Load Parameters
+
 ```{python}
 N = 22
 T = 20
@@ -57,7 +58,8 @@ l = data_params['l']
 num_schedules = data_params['num_schedules'] # Number of schedules to sample
 convolutions = data_params['convolutions']
 
-print(f"The data has following keys: {[key for key in data_params.keys()]}")
+for key in data_params.keys():
+  print(f"{key} = {data_params[key]}")
 
 for convolution in list(convolutions.items())[:2]: print(convolution, "\n")
 ```
@@ -200,7 +202,12 @@ regressor.fit(X_train, y_train)
 end = time.time()
 training_time = end - start
 print(f"\nTraining time: {training_time} seconds\n")
+#Save model
 regressor.save_model('models/regressor_large_instance.json')
+# Save parameters
+params = regressor.get_params()
+with open('models/regressor_params.json', 'w') as f:
+    json.dump(params, f)
 ```
 
 4.  *Use the trained model to predict the objective values for the test set and calculate the Mean Absolute Percentage Error (MAPE) between the predicted and true values.*

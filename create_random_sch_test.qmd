@@ -1,0 +1,178 @@
+---
+title: "test"
+jupyter: python3
+---
+
+```{python}
+
+def generate_schedules(N, T):
+    def generate(current_schedule, remaining_patients, remaining_slots):
+        if remaining_slots == 0:
+            if remaining_patients == 0:
+                schedules.append(current_schedule)
+            return
+        
+        for i in range(remaining_patients + 1):
+            generate(current_schedule + [i], remaining_patients - i, remaining_slots - 1)
+    
+    schedules = []
+    generate([], N, T)
+    return schedules
+
+# Example usage:
+N = 5  # Total number of patients
+T = 3  # Number of timeslots
+schedules = generate_schedules(N, T)
+for schedule in schedules:
+    print(schedule)
+
+```
+
+```{python}
+import random
+import math
+from typing import List, Generator, Tuple
+import numpy as np
+
+def random_combination_with_replacement(T: int, N: int, num_samples: int) -> List[List[int]]:
+    """
+    Generate random samples from the set of combinations with replacement without generating the entire population.
+
+    Parameters:
+    T (int): The range of elements to choose from, i.e., the maximum value plus one.
+    N (int): The number of elements in each combination.
+    num_samples (int): The number of random samples to generate.
+
+    Returns:
+    List[List[int]]: A list containing the randomly generated combinations.
+    """
+    def index_to_combination(index: int, T: int, N: int) -> List[int]:
+        """
+        Convert a lexicographic index to a combination with replacement.
+
+        Parameters:
+        index (int): The lexicographic index of the combination.
+        T (int): The range of elements to choose from, i.e., the maximum value plus one.
+        N (int): The number of elements in each combination.
+
+        Returns:
+        List[int]: The combination corresponding to the given index.
+        """
+        combination = []
+        current = index
+        for i in range(N):
+            for j in range(T):
+                combs = math.comb(N - i + T - j - 2, T - j - 1)
+                if current < combs:
+                    combination.append(j)
+                    break
+                current -= combs
+        return combination
+
+    # Calculate total number of combinations
+    total_combinations = math.comb(N + T - 1, N)
+    print(f"Total number of combinations: {total_combinations:,}")
+
+    schedules = []
+    for _ in range(num_samples):
+        # Randomly select an index
+        random_index = random.randint(0, total_combinations - 1)
+        # Convert index to combination
+        sample = index_to_combination(random_index, T, N)
+        # Convert combination to schedule
+        schedule = np.bincount(sample, minlength=T).tolist()
+        schedules.append(schedule)
+
+    return schedules
+
+# Example usage
+T = 18
+N = 12
+num_samples = 5
+
+samples = random_combination_with_replacement(T, N, num_samples)
+for sample in samples:
+    print(sample)
+```
+
+```{python}
+def index_to_combination(index: int, T: int, N: int) -> List[int]:
+    """
+    Convert a lexicographic index to a combination with replacement.
+
+    Parameters:
+    index (int): The lexicographic index of the combination.
+    T (int): The range of elements to choose from, i.e., the maximum value plus one.
+    N (int): The number of elements in each combination.
+
+    Returns:
+    List[int]: The combination corresponding to the given index.
+    """
+    combination = []
+    current = index
+    for i in range(N):
+        for j in range(T):
+            combs = math.comb(N - i + T - j - 2, T - j - 1)
+            if current < combs:
+                combination.append(j)
+                break
+            current -= combs
+    return combination
+  
+T, N = [10, 12]
+
+total_combinations = math.comb(N + T - 1, N)
+print(f"Total number of combinations: {total_combinations:,}")
+random_index = random.randint(0, total_combinations-1)
+random_index
+sample = index_to_combination(random_index, T, N)
+sample
+schedule = np.bincount(sample, minlength=T).tolist()
+schedule
+sample = random.choices(range(T), k = N)
+sample
+schedule = np.bincount(sample, minlength=T).tolist()
+schedule
+sum(schedule)
+```
+
+```{python}
+import statistics
+import plotly.express as px
+
+def method_1(T, N):
+  total_combinations = math.comb(N + T - 1, N)
+  #print(f"Total number of combinations: {total_combinations:,}")
+  random_index = random.randint(0, total_combinations-1)
+  #random_index
+  sample = index_to_combination(random_index, T, N)
+  #sample
+  schedule = np.bincount(sample, minlength=T).tolist()
+  return(statistics.variance(schedule))
+
+def method_2(T, N):
+  sample = random.choices(range(T), k = N)
+  schedule = np.bincount(sample, minlength=T).tolist()
+  return(statistics.variance(schedule))
+
+var_m1_lst = []
+var_m2_lst = []
+for _ in range(100):
+  T, N = [10, 12]
+  var_m1_lst.append(method_1(T, N))
+  var_m2_lst.append(method_2(T, N))
+
+method1 = ["method 1"]*len(var_m1_lst)
+method2 = ["method 2"]*len(var_m2_lst)
+
+var_combined = var_m1_lst + var_m2_lst
+method_combined = method1 + method2
+
+# Create the dictionary with the concatenated lists
+data = {"Variance": var_combined, "Method": method_combined}
+
+# Plot data
+fig = px.scatter(data, y="Method", x="Variance")
+fig.show()
+  
+```
