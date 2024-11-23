@@ -6,7 +6,14 @@ import time
 import pickle
 from itertools import combinations_with_replacement, combinations
 from typing import List, Generator, Tuple
+import networkx as nx
+import plotly.graph_objects as go
+import plotly.subplots as sp
 
+def powerset(iterable, size=1):
+    "powerset([1,2,3], 2) --> (1,2) (1,3) (2,3)"
+    return [[i for i in item] for item in combinations(iterable, size)]
+  
 def get_v_star(T: int) -> np.ndarray:
     """
     Generate a set of vectors V* of length T, where each vector is a cyclic permutation of an initial vector.
@@ -23,7 +30,7 @@ def get_v_star(T: int) -> np.ndarray:
     np.ndarray: An array of shape (T, T), where each row is a vector in V*.
     """
     # Create an initial vector 'u' of zeros with length 'T'
-    u = np.zeros(T)
+    u = np.zeros(T, dtype=np.int64)
     # Set the first element of vector 'u' to -1 and the last element to 1
     u[0] = -1
     u[-1] = 1
@@ -212,6 +219,46 @@ def random_combination_with_replacement(T: int, N: int, num_samples: int) -> Lis
         schedules.append(schedule)
 
     return schedules
+  
+def create_random_schedules(T, N, num_schedules):
+  schedules = []
+  for _ in range(num_schedules):
+    sample = random.choices(range(T), k = N)
+    schedule = np.bincount(sample, minlength=T).tolist()
+    schedules.append(schedule)
+  return(schedules)
+
+def build_welch_bailey_schedule(N, T):
+    """
+    Build a schedule based on the Welch and Bailey (1952) heuristic.
+
+    Parameters:
+    N (int): Number of patients to be scheduled.
+    T (int): Number of time intervals in the schedule.
+
+    Returns:
+    list: A schedule of length T where each item represents the number of patients scheduled
+          at the corresponding time interval.
+    """
+    # Initialize the schedule with zeros
+    schedule = [0] * T
+
+    # Schedule the first two patients at the beginning
+    schedule[0] = 2
+    remaining_patients = N - 2
+
+    # Distribute patients in the middle time slots with gaps
+    for t in range(1, T - 1):
+        if remaining_patients <= 0:
+            break
+        if t % 2 == 1:  # Create gaps (only schedule patients at odd time slots)
+            schedule[t] = 1
+            remaining_patients -= 1
+
+    # Push any remaining patients to the last time slot
+    schedule[-1] += remaining_patients
+
+    return schedule
 
 def create_neighbors_list(s: List[int]) -> (List[int], List[int]):
     """
@@ -341,8 +388,8 @@ def calculate_objective(schedule: List[int], s: List[float], d: int, q: float) -
             convolved = np.convolve(wt_temp[-1], s)
             sp.append(np.sum(convolved[:d + 1]))
             sp.extend(convolved[d + 1:])
-        # Calculate expected spillover time
-        esp = np.dot(range(len(sp)), sp)
+    # Calculate expected spillover time
+    esp = np.dot(range(len(sp)), sp)
     return ewt, esp
   
 def calculate_objective_serv_time_lookup(schedule: List[int], d: int, q: float, convolutions: dict) -> Tuple[float, float]:
@@ -533,3 +580,868 @@ def compute_convolutions(probabilities: List[float], N: int, q: float = 0.0) -> 
             result = np.convolve(result, probabilities)
             convolutions[k] = result
     return convolutions
+
+def local_search(x, d, q, convolutions, w, v_star, size=2, echo=False):
+    # Initialize the best solution found so far 'x_star' to the input vector 'x'
+    x_star = np.array(x).flatten()  # Keep as 1D array
+
+    # Calculate initial objectives and cost
+    objectives_star = calculate_objective_serv_time_lookup(x_star, d, q, convolutions)
+    c_star = w * objectives_star[0] + (1 - w) * objectives_star[1]
+
+    # Set the value of 'T' to the length of the input vector 'x'
+    T = len(x_star)
+
+    # Outer loop for the number of patients to switch
+    t = 1
+    while t < size:
+        if echo == True: print(f'Running local search {t}')
+
+        # Generate the neighborhood of the current best solution 'x_star' with 't' patients switched
+        ids_gen = powerset(range(T), t)
+        neighborhood = get_neighborhood(x_star, v_star, ids_gen)
+        if echo == True: print(f"Switching {t} patient(s). Size of neighborhood: {len(list(ids_gen))}")
+
+        # Flag to track if a better solution is found
+        found_better_solution = False
+
+        for neighbor in neighborhood:
+            # Calculate objectives for the neighbor
+            objectives = calculate_objective_serv_time_lookup(neighbor, d, q, convolutions)
+            cost = w * objectives[0] + (1 - w) * objectives[1]
+
+            # Compare scalar costs
+            if cost < c_star:
+                x_star = neighbor
+                c_star = cost
+                if echo == True: print(f"Found better solution: {x_star}, cost: {c_star}")
+
+                # Set the flag to restart the outer loop
+                found_better_solution = True
+                break  # Break out of the inner loop
+
+        # If a better solution was found, restart the search from t = 1
+        if found_better_solution:
+            t = 1  # Restart search with t = 1
+        else:
+            t += 1  # Move to the next neighborhood size if no better solution was found
+
+    # Return the best solution found 'x_star' and its cost
+    return x_star, c_star
+  
+import numpy as np
+from typing import List, Tuple
+
+def local_search_w_intermediates(
+    x: List[int],
+    d: int,
+    q: float,
+    convolutions: any,  # Replace 'any' with the actual type if known
+    w: float,
+    v_star: any,        # Replace 'any' with the actual type if known
+    size: int = 2,
+    echo: bool = False
+) -> Tuple[List[List[int]], List[float]]:
+    """
+    Performs a local search to find an optimal schedule, saving intermediate solutions.
+
+    Parameters:
+    - x (List[int]): Initial schedule.
+    - d (int): Duration threshold.
+    - q (float): No-show probability.
+    - convolutions (any): Precomputed convolutions (replace 'any' with actual type).
+    - w (float): Weight for the objective function.
+    - v_star (any): Some precomputed value or structure (replace 'any' with actual type).
+    - size (int): Maximum number of patients to switch in the neighborhood.
+    - echo (bool): If True, prints debug information.
+
+    Returns:
+    - schedules (List[List[int]]): List containing the initial schedule and all intermediate improved schedules.
+    - objectives (List[float]): List containing the corresponding objective values for each schedule.
+    """
+    
+    # Initialize the best solution found so far 'x_star' to the input vector 'x'
+    x_star = np.array(x).flatten()  # Ensure it's a 1D array
+
+    # Calculate initial objectives and cost
+    objectives_star = calculate_objective_serv_time_lookup(x_star, d, q, convolutions)
+    c_star = w * objectives_star[0] + (1 - w) * objectives_star[1]
+
+    # Initialize lists to store schedules and their corresponding objective values
+    schedules: List[List[int]] = [x_star.tolist()]  # Start with the initial schedule
+    objectives: List[float] = [c_star]             # Initial objective value
+
+    # Set the value of 'T' to the length of the input vector 'x'
+    T = len(x_star)
+
+    # Outer loop for the number of patients to switch
+    t = 1
+    while t < size:
+        if echo:
+            print(f'Running local search with t = {t}')
+
+        # Generate the neighborhood of the current best solution 'x_star' with 't' patients switched
+        ids_gen = powerset(range(T), t)
+        neighborhood = get_neighborhood(x_star, v_star, ids_gen)
+
+        # To accurately count the neighborhood size, we need to regenerate the generator
+        neighborhood_list = list(get_neighborhood(x_star, v_star, powerset(range(T), t)))
+        if echo:
+            print(f"Switching {t} patient(s). Size of neighborhood: {len(neighborhood_list)}")
+
+        # Flag to track if a better solution is found
+        found_better_solution = False
+
+        for neighbor in neighborhood_list:
+            # Calculate objectives for the neighbor
+            objectives_neighbor = calculate_objective_serv_time_lookup(neighbor, d, q, convolutions)
+            cost_neighbor = w * objectives_neighbor[0] + (1 - w) * objectives_neighbor[1]
+
+            # Compare scalar costs
+            if cost_neighbor < c_star:
+                x_star = neighbor
+                c_star = cost_neighbor
+                schedules.append(x_star.tolist())
+                objectives.append(c_star)
+
+                if echo:
+                    print(f"Found better solution: {x_star}, cost: {c_star}")
+
+                # Set the flag to restart the outer loop
+                found_better_solution = True
+                break  # Break out of the inner loop to restart search
+
+        # If a better solution was found, restart the search from t = 1
+        if found_better_solution:
+            t = 1  # Restart search with t = 1
+        else:
+            t += 1  # Move to the next neighborhood size if no better solution was found
+
+    # Return the list of schedules and their corresponding objective values
+    return schedules, objectives
+  
+def get_neighborhood(x, v_star, ids, verbose=False):
+    x = np.array(x)
+    p = 50
+    if verbose:
+        print(f"Printing every {p}th result")
+    # Initialize the list 'neighborhood' to store the vectors in the neighborhood of 'x'
+    neighborhood = []
+    # Loop over all possible non-empty subsets of indices
+    for i in range(len(ids)):
+        # Initialize the vector 'neighbor' to store the sum of vectors in 'v_star' corresponding to the indices in 'ids[i]'
+        neighbor = np.zeros(len(x), dtype=int)
+        # Loop over all indices in 'ids[i]'
+        for j in range(len(ids[i])):
+            if verbose:
+                print(f"v_star{[ids[i][j]]}: {v_star[ids[i][j]]}")
+            # Add the vector in 'v_star' corresponding to the index 'ids[i][j]' to 'neighbor'
+            neighbor += v_star[ids[i][j]]
+        # Append the vector 'x' plus 'neighbor' to the list 'neighborhood'
+        x_n = x + neighbor
+        if i%p==0:
+            if verbose:
+                print(f"x, x', delta:\n{x},\n{x_n},\n{neighbor}\n----------------- ")
+        neighborhood.append(x_n)
+    
+    # Convert the list 'neighborhood' into a NumPy array
+    neighborhood = np.array(neighborhood)
+    if verbose:
+        print(f"Size of raw neighborhood: {len(neighborhood)}")
+    # Create a mask for rows with negative values
+    mask = ~np.any(neighborhood < 0, axis=1)
+    # Filter out rows with negative values using the mask
+    if verbose:
+        print(f"filtered out: {len(neighborhood)-mask.sum()} schedules with negative values.")
+    filtered_neighborhood = neighborhood[mask]
+    if verbose:
+        print(f"Size of filtered neighborhood: {len(filtered_neighborhood)}")
+    return filtered_neighborhood
+  
+def create_schedule_network(N: int, T: int, s: List[float], d: int, q: float, w: float, echo: bool = False) -> go.Figure:
+    """
+    Creates and visualizes a network of schedules where each node represents an allocation
+    of N patients across T time intervals. Edges connect schedules that differ by moving
+    a single patient between any two time intervals. Node colors represent the objective value.
+    Arrows are added from nodes with higher objective values to those with lower values.
+
+    Parameters:
+    - N (int): Total number of patients.
+    - T (int): Number of time intervals.
+    - s (List[float]): Service times probability distribution.
+    - d (int): Duration threshold or maximum allowed service time per slot.
+    - q (float): No-show probability.
+
+    Returns:
+    - fig (plotly.graph_objects.Figure): Interactive network graph.
+    """
+
+    # 1. Generate all possible schedules (compositions of N into T non-negative integers)
+    def generate_compositions(n, t):
+        if t == 1:
+            yield (n,)
+            return
+        for i in range(n + 1):
+            for comp in generate_compositions(n - i, t - 1):
+                yield (i,) + comp
+
+    schedules = list(generate_compositions(N, T))
+
+    # 2. Initialize the directed graph
+    G = nx.DiGraph()
+
+    # Add all schedules as nodes
+    for schedule in schedules:
+        G.add_node(schedule)
+
+    # 3. Define a helper function to find neighbors by moving one patient
+    def find_neighbors(schedule):
+        neighbors = []
+        for i in range(T):
+            for j in range(T):
+                if i != j and schedule[i] > 0:
+                    # Move one patient from interval i to interval j
+                    new_schedule = list(schedule)
+                    new_schedule[i] -= 1
+                    new_schedule[j] += 1
+                    neighbors.append(tuple(new_schedule))
+        return neighbors
+
+    # 4. Add edges based on single-interval shifts
+    for schedule in schedules:
+        neighbors = find_neighbors(schedule)
+        for neighbor in neighbors:
+            if neighbor in G.nodes():
+                G.add_edge(schedule, neighbor)
+
+    # 5. Assign positions to nodes
+    if T == 3:
+        # For T=3, arrange nodes in a triangular (simplex) layout
+        positions = {}
+        for schedule in G.nodes():
+            a, b, c = schedule
+            # Simplex coordinates for 3 variables
+            # Convert to 2D coordinates for plotting
+            x = a - c
+            y = b - c
+            positions[schedule] = (x, y)
+    else:
+        # For other T, use spring layout
+        positions = nx.spring_layout(G, seed=42)  # Seed for reproducibility
+
+    # Assign positions to graph nodes
+    nx.set_node_attributes(G, positions, 'pos')
+
+    # 6. Calculate objective values for each node
+    # We'll use 'ewt' + 'esp' as a combined objective for coloring
+    objective_values = []
+    for schedule in G.nodes():
+        ewt, esp = calculate_objective(list(schedule), s, d, q)
+        objective = w*ewt/N + (1-w)*esp  # Combine the two objectives as needed
+        if echo == True: print(f"Schedule: {schedule}, Objective: {objective:.2f}, Expected mean waiting time: {ewt:.2f}, Expected spillover time: {esp:.2f}")
+        objective_values.append(objective)
+
+    # Normalize objective values for color mapping
+    min_obj = min(objective_values)
+    max_obj = max(objective_values)
+    if max_obj - min_obj == 0:
+        normalized_values = [0.5 for _ in objective_values]
+    else:
+        normalized_values = [(val - min_obj) / (max_obj - min_obj) for val in objective_values]
+
+    # Create a mapping from schedule to normalized objective value
+    schedule_to_obj = {schedule: obj for schedule, obj in zip(G.nodes(), normalized_values)}
+
+    # 7. Create edge traces (for visual reference, lines without direction)
+    edge_x = []
+    edge_y = []
+    for edge in G.edges():
+        x0, y0 = G.nodes[edge[0]]['pos']
+        x1, y1 = G.nodes[edge[1]]['pos']
+        edge_x.extend([x0, x1, None])
+        edge_y.extend([y0, y1, None])
+
+    edge_trace = go.Scatter(
+        x=edge_x, y=edge_y,
+        line=dict(width=1, color='#888'),
+        hoverinfo='none',
+        mode='lines'
+    )
+
+    # 8. Create node traces with updated hover info
+    node_x = []
+    node_y = []
+    node_labels = []      # For node annotations (schedule)
+    node_hovertext = []   # For hover info (objective value)
+    node_colors = []
+
+    for node in G.nodes():
+        x, y = G.nodes[node]['pos']
+        node_x.append(x)
+        node_y.append(y)
+        # Node label shows the schedule
+        node_labels.append(str(node))
+        # Hover text shows the objective value
+        node_hovertext.append(f"Objective: {schedule_to_obj[node]:.2f}")
+        node_colors.append(schedule_to_obj[node])
+
+    node_trace = go.Scatter(
+        x=node_x, y=node_y,
+        mode='markers+text',
+        text=node_labels,
+        textposition="top center",
+        hovertext=node_hovertext,
+        hoverinfo='text',
+        marker=dict(
+            showscale=True,
+            # Define colorscale from deep red to white
+            colorscale=[
+                [0.0, 'rgb(165,0,38)'],    # Deep Red
+                [1.0, 'rgb(255,255,255)']  # White
+            ],
+            reversescale=True,
+            color=node_colors,
+            size=30,
+            colorbar=dict(
+                thickness=15,
+                title=dict(
+                    text='Objective Value',
+                    side='right'
+                ),
+                xanchor='left',
+            ),
+            line_width=2
+        )
+    )
+
+    # 9. Prepare arrow annotations based on directed edges with edge labels
+    arrow_annotations = []
+    for edge in G.edges():
+        source, target = edge
+        # Compare objective values to determine direction
+        source_obj = schedule_to_obj[source]
+        target_obj = schedule_to_obj[target]
+        if source_obj > target_obj:
+            # Arrow from source to target with negative difference
+            diff = target_obj - source_obj  # Negative value
+            x0, y0 = G.nodes[source]['pos']
+            x1, y1 = G.nodes[target]['pos']
+            # Calculate midpoint for label
+            mid_x = (x0 + x1) / 2
+            mid_y = (y0 + y1) / 2
+            # Add arrow annotation
+            arrow_annotations.append(dict(
+                x=x1,
+                y=y1,
+                ax=x0,
+                ay=y0,
+                xref='x',
+                yref='y',
+                axref='x',
+                ayref='y',
+                showarrow=True,
+                arrowhead=2,
+                arrowsize=2.5,
+                arrowwidth=1,
+                arrowcolor="#000000",
+                opacity=0.5
+            ))
+            # Add text annotation for the difference
+            arrow_annotations.append(dict(
+                x=mid_x,
+                y=mid_y,
+                text=f"{diff:.2f}",
+                showarrow=False,
+                xref='x',
+                yref='y',
+                font=dict(color='blue', size=10),
+                align='center'
+            ))
+        elif target_obj > source_obj:
+            # Arrow from target to source with negative difference
+            diff = source_obj - target_obj  # Negative value
+            x0, y0 = G.nodes[target]['pos']
+            x1, y1 = G.nodes[source]['pos']
+            # Calculate midpoint for label
+            mid_x = (x0 + x1) / 2
+            mid_y = (y0 + y1) / 2
+            # Add arrow annotation
+            arrow_annotations.append(dict(
+                x=x1,
+                y=y1,
+                ax=x0,
+                ay=y0,
+                xref='x',
+                yref='y',
+                axref='x',
+                ayref='y',
+                showarrow=True,
+                arrowhead=2,
+                arrowsize=2.5,
+                arrowwidth=1,
+                arrowcolor="#000000",
+                opacity=0.5
+            ))
+            # Add text annotation for the difference
+            arrow_annotations.append(dict(
+                x=mid_x,
+                y=mid_y,
+                text=f"{diff:.2f}",
+                showarrow=False,
+                xref='x',
+                yref='y',
+                font=dict(color='blue', size=10),
+                align='center'
+            ))
+        # If equal, no arrow or label
+
+    # 10. Assemble the figure with arrow annotations
+    exp_s = sum([i * si for i, si in enumerate(s)])
+    fig = go.Figure(data=[edge_trace, node_trace],
+                 layout=go.Layout(
+                    title=dict(
+                        text=f"Network of Schedules with N={N} Patients, T={T} Time Intervals, Exp. service time = {exp_s:.2f} and w = {w}",
+                        font=dict(size=16)
+                    ),
+                    showlegend=False,
+                    hovermode='closest',
+                    margin=dict(b=20,l=5,r=5,t=40),
+                    annotations=arrow_annotations + [ dict(
+                        text="Created with NetworkX and Plotly",
+                        showarrow=False,
+                        xref="paper", yref="paper",
+                        x=0.005, y=-0.002 ) ],
+                    xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                    yaxis=dict(showgrid=False, zeroline=False, showticklabels=False))
+                    )
+
+    return fig
+
+def create_schedule_network_var_edges(N: int, T: int, s: List[float], d: int, q: float, w: float, echo: bool = False) -> go.Figure:
+    """
+    Creates and visualizes a network of schedules where each node represents an allocation
+    of N patients across T time intervals. Edges connect schedules that differ by moving
+    a single patient between any two time intervals. Node colors represent the objective value.
+    Arrows are added from nodes with higher objective values to those with lower values.
+    Edge lengths are proportional to the absolute difference in objective values.
+
+    Parameters:
+    - N (int): Total number of patients.
+    - T (int): Number of time intervals.
+    - s (List[float]): Service times probability distribution.
+    - d (int): Duration threshold or maximum allowed service time per slot.
+    - q (float): No-show probability.
+    - w (float): Weighting factor for combining ewt and esp in objective calculation.
+    - echo (bool): If True, prints schedule details and objective values.
+
+    Returns:
+    - fig (plotly.graph_objects.Figure): Interactive network graph.
+    """
+
+    # 1. Generate all possible schedules (compositions of N into T non-negative integers)
+    def generate_compositions(n, t):
+        if t == 1:
+            yield (n,)
+            return
+        for i in range(n + 1):
+            for comp in generate_compositions(n - i, t - 1):
+                yield (i,) + comp
+
+    schedules = list(generate_compositions(N, T))
+
+    # 2. Initialize the directed graph
+    G = nx.DiGraph()
+
+    # Add all schedules as nodes
+    for schedule in schedules:
+        G.add_node(schedule)
+
+    # 3. Define a helper function to find neighbors by moving one patient
+    def find_neighbors(schedule):
+        neighbors = []
+        for i in range(T):
+            for j in range(T):
+                if i != j and schedule[i] > 0:
+                    # Move one patient from interval i to interval j
+                    new_schedule = list(schedule)
+                    new_schedule[i] -= 1
+                    new_schedule[j] += 1
+                    neighbors.append(tuple(new_schedule))
+        return neighbors
+
+    # 4. Add edges based on single-interval shifts
+    for schedule in schedules:
+        neighbors = find_neighbors(schedule)
+        for neighbor in neighbors:
+            if neighbor in G.nodes():
+                G.add_edge(schedule, neighbor)
+
+    # 5. Assign positions to nodes based on objective values to make edge lengths proportional
+    #    Arrange nodes along the x-axis based on their objective values
+    #    Assign a small y-offset to spread nodes vertically and prevent overlap
+    objective_dict = {}
+    for schedule in G.nodes():
+        ewt, esp = calculate_objective(list(schedule), s, d, q)
+        objective = w * ewt / N + (1 - w) * esp  # Combine the two objectives as needed
+        objective_dict[schedule] = objective
+        if echo:
+            print(f"Schedule: {schedule}, Objective: {objective:.2f}, Expected mean waiting time: {ewt:.2f}, Expected spillover time: {esp:.2f}")
+
+    # Sort schedules by objective value
+    sorted_schedules = sorted(G.nodes(), key=lambda x: objective_dict[x])
+
+    # Assign positions
+    positions = {}
+    spacing = 1  # Base spacing between nodes
+    y_offset = 0  # Initial y-offset
+    y_increment = 0.2  # Increment for each node to prevent overlap
+
+    for idx, schedule in enumerate(sorted_schedules):
+        x = objective_dict[schedule] * spacing  # x-position proportional to objective value
+        y = y_offset
+        positions[schedule] = (x, y)
+        y_offset += y_increment  # Increment y to spread nodes vertically
+
+    # Assign positions to graph nodes
+    nx.set_node_attributes(G, positions, 'pos')
+
+    # 6. Calculate objective values for each node (already done in objective_dict)
+
+    # Normalize objective values for color mapping
+    min_obj = min(objective_dict.values())
+    max_obj = max(objective_dict.values())
+    if max_obj - min_obj == 0:
+        normalized_values = [0.5 for _ in objective_dict.values()]
+    else:
+        normalized_values = [(val - min_obj) / (max_obj - min_obj) for val in objective_dict.values()]
+
+    # Create a mapping from schedule to normalized objective value
+    schedule_to_obj = {schedule: obj for schedule, obj in zip(G.nodes(), normalized_values)}
+
+    # 7. Create edge traces (for visual reference, lines without direction)
+    edge_x = []
+    edge_y = []
+    for edge in G.edges():
+        x0, y0 = G.nodes[edge[0]]['pos']
+        x1, y1 = G.nodes[edge[1]]['pos']
+        edge_x.extend([x0, x1, None])
+        edge_y.extend([y0, y1, None])
+
+    edge_trace = go.Scatter(
+        x=edge_x, y=edge_y,
+        line=dict(width=1, color='#888'),
+        hoverinfo='none',
+        mode='lines'
+    )
+
+    # 8. Create node traces with updated hover info
+    node_x = []
+    node_y = []
+    node_labels = []      # For node annotations (schedule)
+    node_hovertext = []   # For hover info (objective value)
+    node_colors = []
+
+    for node in G.nodes():
+        x, y = G.nodes[node]['pos']
+        node_x.append(x)
+        node_y.append(y)
+        # Node label shows the schedule
+        node_labels.append(str(node))
+        # Hover text shows the objective value
+        node_hovertext.append(f"Objective: {objective_dict[node]:.2f}")
+        node_colors.append(schedule_to_obj[node])
+
+    node_trace = go.Scatter(
+        x=node_x, y=node_y,
+        mode='markers+text',
+        text=node_labels,
+        textposition="top center",
+        hovertext=node_hovertext,
+        hoverinfo='text',
+        marker=dict(
+            showscale=True,
+            # Define colorscale from deep red to white
+            colorscale=[
+                [0.0, 'rgb(165,0,38)'],    # Deep Red
+                [1.0, 'rgb(255,255,255)']  # White
+            ],
+            reversescale=True,  # Set to True as per your changes
+            color=node_colors,
+            size=10,            # Marker size
+            colorbar=dict(
+                thickness=15,
+                title=dict(
+                    text='Objective Value',
+                    side='right'
+                ),
+                xanchor='left',
+            ),
+            line_width=2
+        )
+    )
+
+    # 9. Prepare arrow annotations based on directed edges with edge labels
+    arrow_annotations = []
+    for edge in G.edges():
+        source, target = edge
+        # Compare objective values to determine direction
+        source_obj = objective_dict[source]
+        target_obj = objective_dict[target]
+        if source_obj > target_obj:
+            # Arrow from source to target with negative difference
+            diff = target_obj - source_obj  # Negative value
+            x0, y0 = G.nodes[source]['pos']
+            x1, y1 = G.nodes[target]['pos']
+            # Calculate midpoint for label
+            mid_x = (x0 + x1) / 2
+            mid_y = (y0 + y1) / 2
+            # Add arrow annotation
+            arrow_annotations.append(dict(
+                x=x1,
+                y=y1,
+                ax=x0,
+                ay=y0,
+                xref='x',
+                yref='y',
+                axref='x',
+                ayref='y',
+                showarrow=True,
+                arrowhead=2,
+                arrowsize=2.5,    # Adjusted arrow size
+                arrowwidth=1,
+                arrowcolor="#000000",
+                opacity=0.5
+            ))
+            # Add text annotation for the difference
+            arrow_annotations.append(dict(
+                x=mid_x,
+                y=mid_y,
+                text=f"{diff:.2f}",
+                showarrow=False,
+                xref='x',
+                yref='y',
+                font=dict(color='blue', size=10),
+                align='center'
+            ))
+        elif target_obj > source_obj:
+            # Arrow from target to source with negative difference
+            diff = source_obj - target_obj  # Negative value
+            x0, y0 = G.nodes[target]['pos']
+            x1, y1 = G.nodes[source]['pos']
+            # Calculate midpoint for label
+            mid_x = (x0 + x1) / 2
+            mid_y = (y0 + y1) / 2
+            # Add arrow annotation
+            arrow_annotations.append(dict(
+                x=x1,
+                y=y1,
+                ax=x0,
+                ay=y0,
+                xref='x',
+                yref='y',
+                axref='x',
+                ayref='y',
+                showarrow=True,
+                arrowhead=2,
+                arrowsize=2.5,    # Adjusted arrow size
+                arrowwidth=1,
+                arrowcolor="#000000",
+                opacity=0.5
+            ))
+            # Add text annotation for the difference
+            arrow_annotations.append(dict(
+                x=mid_x,
+                y=mid_y,
+                text=f"{diff:.2f}",
+                showarrow=False,
+                xref='x',
+                yref='y',
+                font=dict(color='blue', size=10),
+                align='center'
+            ))
+        # If equal, no arrow or label
+
+    # 10. Assemble the figure with arrow annotations
+    exp_s = sum([i * si for i, si in enumerate(s)])  # Calculate expected service time
+    fig = go.Figure(data=[edge_trace, node_trace],
+                 layout=go.Layout(
+                    title=dict(
+                        text=f"Network of Schedules with N={N} Patients, T={T} Time Intervals, Exp. service time = {exp_s:.2f}, and w = {w}",
+                        font=dict(size=16)
+                    ),
+                    showlegend=False,
+                    hovermode='closest',
+                    margin=dict(b=20,l=5,r=5,t=40),
+                    annotations=arrow_annotations + [ dict(
+                        text="Created with NetworkX and Plotly",
+                        showarrow=False,
+                        xref="paper", yref="paper",
+                        x=0.005, y=-0.002 ) ],
+                    xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                    yaxis=dict(showgrid=False, zeroline=False, showticklabels=False))
+                    )
+
+    return fig
+
+def create_schedule_network_from_lists(
+    schedules: List[List[int]],
+    objective_values: List[float],
+    echo: bool = False
+) -> go.Figure:
+    """
+    Creates a network graph connecting each schedule to its subsequent schedule.
+    Edge lengths are proportional to the difference in objective values between connected schedules.
+    Each node is offset vertically to prevent overlap.
+    The color scale ranges from deep red (max objective) to white (min objective).
+    The difference value is annotated next to each edge.
+    
+    Parameters:
+    - schedules (List[List[int]]): A list of schedules, each schedule is a list of patient allocations across time intervals.
+    - objective_values (List[float]): A list of objective values corresponding to each schedule.
+    - echo (bool): If True, prints schedule details and objective values.
+    
+    Returns:
+    - fig (plotly.graph_objects.Figure): Interactive network graph.
+    """
+    
+    # 1. Validate Inputs
+    if len(schedules) != len(objective_values):
+        raise ValueError("The number of schedules must match the number of objective values.")
+    
+    num_schedules = len(schedules)
+    
+    # 2. Initialize the directed graph
+    G = nx.DiGraph()
+    
+    # 3. Add nodes with objective values
+    for idx, (schedule, obj) in enumerate(zip(schedules, objective_values)):
+        G.add_node(idx, schedule=schedule, objective=obj)
+        if echo:
+            print(f"Schedule {idx}: {schedule}, Objective: {obj:.2f}")
+    
+    # 4. Add edges connecting each schedule to the next
+    for idx in range(num_schedules - 1):
+        G.add_edge(idx, idx + 1)
+    
+    # 5. Assign positions to nodes based on cumulative objective differences
+    x_positions = [0]
+    y_positions = [0]  # Initialize y_positions with the first node at y=0
+    vertical_offset = 5.5  # Adjust this value to control vertical spacing
+    
+    for i in range(1, num_schedules):
+        diff = abs(objective_values[i] - objective_values[i-1])
+        x = x_positions[-1] + diff
+        # Alternate the vertical position to offset nodes
+        y = y_positions[-1] - vertical_offset
+        x_positions.append(x)
+        y_positions.append(y)
+    
+    pos = {idx: (x, y) for idx, (x, y) in enumerate(zip(x_positions, y_positions))}
+    
+    # 6. Create edge traces
+    edge_traces = []
+    annotations = []
+    
+    for edge in G.edges():
+        source, target = edge
+        x0, y0 = pos[source]
+        x1, y1 = pos[target]
+        
+        # Edge line
+        edge_traces.append(
+            go.Scatter(
+                x=[x0, x1, None],
+                y=[y0, y1, None],
+                mode='lines',
+                line=dict(width=2, color='gray'),
+                hoverinfo='none'
+            )
+        )
+        
+        # Calculate midpoint for annotation
+        mid_x = (x0 + x1) / 2
+        mid_y = (y0 + y1) / 2
+        
+        # Objective difference
+        obj_diff = objective_values[target] - objective_values[source]
+        
+        # Edge annotation
+        annotations.append(
+            dict(
+                x=mid_x,
+                y=mid_y,
+                text=f"{obj_diff:.2f}",
+                showarrow=True,
+                arrowhead=2,
+                ax=mid_x,
+                ay=mid_y + (0.3 if y1 >= y0 else -0.3),  # Offset direction based on edge slope
+                xref='x',
+                yref='y',
+                font=dict(color='blue', size=12),
+                align='center'
+            )
+        )
+    
+    # 7. Create node trace
+    node_trace = go.Scatter(
+        x=x_positions,
+        y=y_positions,
+        mode='markers+text',
+        text=[str(schedule) for schedule in schedules],
+        textposition="top center",
+        marker=dict(
+            size=15,
+            color=objective_values,
+            colorscale=[
+                [0.0, 'rgb(255,255,255)'],    # White for min objective
+                [1.0, 'rgb(165,0,38)']        # Deep Red for max objective
+            ],
+            cmin=min(objective_values),
+            cmax=max(objective_values),
+            colorbar=dict(
+                title='Objective Value',
+                titleside='right',
+                tickmode='linear',
+                ticks='outside'
+            ),
+            reversescale=False,  # False since our colorscale is defined from min to max
+            line=dict(width=2, color='black')
+        ),
+        hoverinfo='text'
+    )
+    
+    # Update hover text to include schedule and objective value
+    node_trace.text = [f"Schedule: {schedule}<br>Objective: {obj:.2f}" for schedule, obj in zip(schedules, objective_values)]
+    
+    # 8. Assemble the figure
+    fig = go.Figure(
+        data=edge_traces + [node_trace],
+        layout=go.Layout(
+            title=dict(
+                text=f"Local search trace for schedule with N={sum(schedules[0])} patients",
+                x=0.5,
+                xanchor='center',
+                font=dict(size=20)
+            ),
+            showlegend=False,
+            hovermode='closest',
+            margin=dict(b=50, l=50, r=150, t=100),
+            annotations=annotations,
+            xaxis=dict(
+                showgrid=False,
+                zeroline=False,
+                showticklabels=False,
+                title='Objective Value Difference'
+            ),
+            yaxis=dict(
+                showgrid=False,
+                zeroline=False,
+                showticklabels=False
+            ),
+            template="plotly_white"
+        )
+    )
+    
+    return fig
+
+

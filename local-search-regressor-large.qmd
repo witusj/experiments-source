@@ -1,5 +1,5 @@
 ---
-title: "Large instance XGBoost classification model for pairwise ranking"
+title: "Large instance local search with trained XGBoost regressor model"
 jupyter: python3
 ---
 
@@ -21,6 +21,7 @@ The XGBoost Regressor model will be able to efficiently guide the local search a
 
 ```{python}
 import numpy as np
+import json
 from itertools import chain, combinations
 import sys
 from math import comb  # Available in Python 3.8 and later
@@ -41,7 +42,8 @@ file_path_parameters = f"datasets/parameters_{N}_{T}_{l}.pkl"
 with open(file_path_parameters, 'rb') as f:
     data_params = pickle.load(f)
 
-print(f"The data has following keys: {[key for key in data_params.keys()]}")
+for key in data_params.keys():
+  print(f"{key} = {data_params[key]}")
 
 N = data_params['N'] # Number of patients
 T = data_params['T'] # Number of intervals
@@ -50,10 +52,12 @@ max_s = data_params['max_s'] # Maximum service time
 q = data_params['q'] # Probability of a scheduled patient not showing up
 w = data_params['w'] # Weight for the waiting time in objective function
 l = data_params['l']
+
+for key in data_params.keys():
+  print(f"{key} = {data_params[key]}")
+  
 num_schedules = data_params['num_schedules'] # Number of schedules to sample
 convolutions = data_params['convolutions']
-
-for convolution in list(convolutions.items())[:2]: print(convolution, "\n")
 ```
 
 ### Experimental Design
@@ -256,9 +260,6 @@ print(f"All neighborhoods with {size} patients switched:\n x = {np.array(x)}: \n
 2.  For each vector $y$ in the neighborhood of $x^*$:
     i.  Predict $C(y)$.
     ii. If $C(y) < C(x^*)$, set $x^* = y$ and go to 1
-
-<!-- -->
-
 3.  Return $x^*$.
 
 ```{python}
@@ -266,10 +267,10 @@ print(f"All neighborhoods with {size} patients switched:\n x = {np.array(x)}: \n
 from functions import calculate_objective_serv_time_lookup
 
 def local_search_predicted(x, d, q, convolutions, w, v_star, regressor, size=2):
-    # Flatten input and initialize the best solution
-    x_star = np.array(x).flatten()  # Ensure 1D array
-    x_star_dmatrix = xgb.DMatrix(x_star.reshape(1, -1))
-    c_star = regressor.predict(x_star_dmatrix)[0]
+    # Ensure x_star is a 1D numpy array
+    x_star = np.array(x).flatten()
+    c_star = regressor.predict(x_star.reshape(1, -1))[0]
+
     solutions_list = []
     predictions_list = []
     objectives_list = []
@@ -286,14 +287,13 @@ def local_search_predicted(x, d, q, convolutions, w, v_star, regressor, size=2):
         ids_gen = powerset(range(T), t)
         neighborhood = get_neighborhood(x_star, v_star, ids_gen)
         
-        # Create a list to batch process neighbors
+        # Collect neighbors
         neighbors = []
         for neighbor in neighborhood:
             neighbors.append(neighbor)
-        
-        # Convert neighborhood to DMatrix for batch prediction
-        neighbor_dmatrix = xgb.DMatrix(np.array(neighbors))
-        predicted_costs = regressor.predict(neighbor_dmatrix)
+
+        neighbors_array = np.array(neighbors)
+        predicted_costs = regressor.predict(neighbors_array)
 
         # Flag to track if we find a better solution
         found_better_solution = False
@@ -311,6 +311,16 @@ def local_search_predicted(x, d, q, convolutions, w, v_star, regressor, size=2):
                 solutions_list.append(x_star)
                 predictions_list.append(c_star)
                 objectives_list.append(objective_value)
+                
+                # Increase n_estimators
+                regressor.n_estimators += 5
+                # Fit with previous model
+                print(f"Retraining on {len(solutions_list)} new schedules")
+                regressor.fit(
+                    np.array(solutions_list),
+                    np.array(objectives_list),
+                    verbose=False
+                )
 
                 # Set flag to True and break out of inner loop
                 found_better_solution = True
@@ -384,8 +394,13 @@ def local_search(x, d, q, convolutions, w, v_star, size=2):
 ```{python}
 # Example of using the local search algorithm with a regressor model
 # Load regressor model
-regressor = xgb.Booster()
+# Load parameters
+with open('models/regressor_params.json', 'r') as f:
+    params = json.load(f)
+regressor = xgb.XGBRegressor(**params)
 regressor.load_model("models/regressor_large_instance.json")
+# Check parameters
+print(regressor.get_params())
 
 test = local_search_predicted(initial_schedule, d, q, convolutions, w, v_star , regressor, T)
 print(test[:3])
@@ -441,8 +456,7 @@ fig.write_html("images/objectives-large-comparison.html")
 print(f"Initial schedule: {test[0]}")
 test_x = local_search(test[0], d, q, convolutions, w, v_star, T)
 test_x_pred = np.array(test_x[0]).flatten()  # Keep as 1D array
-test_x_pred_dmatrix = xgb.DMatrix(test_x_pred.reshape(1, -1))
-test_c_star_pred = regressor.predict(test_x_pred_dmatrix)[0]
+test_c_star_pred = regressor.predict(test_x_pred.reshape(1, -1))[0]
 print(f"Best solution found: {test_x [0]}, with true cost: {test_x [1]}, and predicted cost: {test_c_star_pred}")
 ```
 

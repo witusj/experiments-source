@@ -8,7 +8,12 @@ import random
 import math
 import numpy as np
 from itertools import combinations
+import plotly.graph_objects as go
+import networkx as nx
+from typing import List, Tuple
+```
 
+```{python}
 def get_v_star(T):
     # Create an initial vector 'u' of zeros with length 'T'
     u = np.zeros(T)
@@ -270,8 +275,8 @@ def calculate_objective(schedule: List[int], s: List[float], d: int, q: float) -
             convolved = np.convolve(wt_temp[-1], s)
             sp.append(np.sum(convolved[:d + 1]))
             sp.extend(convolved[d + 1:])
-        # Calculate expected spillover time
-        esp = np.dot(range(len(sp)), sp)
+    # Calculate expected spillover time
+    esp = np.dot(range(len(sp)), sp)
     return ewt, esp
   
 def test_calculate_objective_serv_time_lookup_with_timing():
@@ -294,7 +299,7 @@ def test_calculate_objective_serv_time_lookup_with_timing():
     s = [prob / total_prob for prob in s]
 
     # Sample schedule: Number of patients scheduled in each time slot
-    schedule = [12, 2, 3, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]
+    schedule = [4, 2, 3, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 2, 0, 3, 0, 4]
 
     # Parameters
     d = 5       # Duration threshold or maximum allowed service time per slot
@@ -351,3 +356,473 @@ def test_calculate_objective_serv_time_lookup_with_timing():
 # Run the test function
 test_calculate_objective_serv_time_lookup_with_timing()
 ```
+
+```{python}
+def build_welch_bailey_schedule(N, T):
+    """
+    Build a schedule based on the Welch and Bailey (1952) heuristic.
+
+    Parameters:
+    N (int): Number of patients to be scheduled.
+    T (int): Number of time intervals in the schedule.
+
+    Returns:
+    list: A schedule of length T where each item represents the number of patients scheduled
+          at the corresponding time interval.
+    """
+    # Initialize the schedule with zeros
+    schedule = [0] * T
+
+    # Schedule the first two patients at the beginning
+    schedule[0] = 2
+    remaining_patients = N - 2
+
+    # Distribute patients in the middle time slots with gaps
+    for t in range(1, T - 1):
+        if remaining_patients <= 0:
+            break
+        if t % 2 == 1:  # Create gaps (only schedule patients at odd time slots)
+            schedule[t] = 1
+            remaining_patients -= 1
+
+    # Push any remaining patients to the last time slot
+    schedule[-1] += remaining_patients
+
+    return schedule
+
+def test_build_welch_bailey_schedule():
+    """
+    Test the build_welch_bailey_schedule function with multiple test cases.
+    """
+    # Test case 1: Simple case with N < T
+    N, T = 10, 15
+    schedule = build_welch_bailey_schedule(N, T)
+    assert len(schedule) == T, f"Failed: Expected length {T}, got {len(schedule)}"
+    assert sum(schedule) == N, f"Failed: Expected sum {N}, got {sum(schedule)}"
+    assert schedule[0] == 2, "Failed: First slot should have 2 patients"
+    assert all(schedule[i] == 0 for i in range(2, T - 1, 2)), "Failed: Gaps not created correctly"
+
+    # Test case 2: Exact fit of N and T
+    N, T = 7, 7
+    schedule = build_welch_bailey_schedule(N, T)
+    assert len(schedule) == T, f"Failed: Expected length {T}, got {len(schedule)}"
+    assert sum(schedule) == N, f"Failed: Expected sum {N}, got {sum(schedule)}"
+
+    # Test case 3: N > T
+    N, T = 20, 10
+    schedule = build_welch_bailey_schedule(N, T)
+    assert len(schedule) == T, f"Failed: Expected length {T}, got {len(schedule)}"
+    assert sum(schedule) == N, f"Failed: Expected sum {N}, got {sum(schedule)}"
+    assert schedule[-1] > 1, "Failed: Excess patients not pushed to the last interval"
+
+    # Test case 4: N is small
+    N, T = 3, 10
+    schedule = build_welch_bailey_schedule(N, T)
+    assert len(schedule) == T, f"Failed: Expected length {T}, got {len(schedule)}"
+    assert sum(schedule) == N, f"Failed: Expected sum {N}, got {sum(schedule)}"
+    assert schedule[0] == 2, "Failed: First slot should have 2 patients"
+    assert schedule.count(1) == 1, "Failed: Only one remaining patient should be scheduled"
+
+    # Test case 5: N equals T
+    N, T = 15, 15
+    schedule = build_welch_bailey_schedule(N, T)
+    assert len(schedule) == T, f"Failed: Expected length {T}, got {len(schedule)}"
+    assert sum(schedule) == N, f"Failed: Expected sum {N}, got {sum(schedule)}"
+
+    print("All test cases passed!")
+
+
+# Run the test function
+test_build_welch_bailey_schedule()
+```
+
+```{python}
+def create_schedule_network_from_lists(
+    schedules: List[List[int]],
+    objective_values: List[float],
+    echo: bool = False
+) -> go.Figure:
+    """
+    Creates and visualizes a network graph of schedules with annotated edges.
+
+    Parameters:
+    - schedules (List[List[int]]): A list of schedules, each schedule is a list of patient allocations across time intervals.
+    - objective_values (List[float]): A list of objective values corresponding to each schedule.
+    - echo (bool): If True, prints schedule details and objective values.
+
+    Returns:
+    - fig (plotly.graph_objects.Figure): Interactive network graph.
+    """
+    
+    # 1. Validate Inputs
+    if len(schedules) != len(objective_values):
+        raise ValueError("The number of schedules must match the number of objective values.")
+    
+    # 2. Convert schedules to tuples for immutability and as node identifiers
+    schedule_tuples = [tuple(schedule) for schedule in schedules]
+    
+    # 3. Create a mapping from schedule to objective value
+    schedule_to_obj = {schedule: obj for schedule, obj in zip(schedule_tuples, objective_values)}
+    
+    # 4. Initialize the directed graph
+    G = nx.DiGraph()
+    
+    # 5. Add nodes with objective values
+    for schedule in schedule_tuples:
+        G.add_node(schedule, objective=schedule_to_obj[schedule])
+        if echo:
+            print(f"Schedule: {schedule}, Objective: {schedule_to_obj[schedule]:.2f}")
+    
+    # 6. Define a helper function to find neighbors by moving one patient
+    def find_neighbors(schedule: Tuple[int, ...]) -> List[Tuple[int, ...]]:
+        neighbors = []
+        T = len(schedule)
+        for i in range(T):
+            if schedule[i] > 0:
+                for j in range(T):
+                    if i != j:
+                        new_schedule = list(schedule)
+                        new_schedule[i] -= 1
+                        new_schedule[j] += 1
+                        neighbors.append(tuple(new_schedule))
+        return neighbors
+    
+    # 7. Add edges based on single patient moves
+    for schedule in schedule_tuples:
+        neighbors = find_neighbors(schedule)
+        for neighbor in neighbors:
+            if neighbor in schedule_to_obj:
+                # Determine direction based on objective values
+                if schedule_to_obj[schedule] > schedule_to_obj[neighbor]:
+                    G.add_edge(schedule, neighbor)
+                elif schedule_to_obj[neighbor] > schedule_to_obj[schedule]:
+                    G.add_edge(neighbor, schedule)
+                # If equal, no edge is added
+    
+    # 8. Assign positions to nodes based on objective values
+    # Sort schedules by objective value
+    sorted_schedules = sorted(schedule_tuples, key=lambda x: schedule_to_obj[x])
+    
+    positions = {}
+    spacing = 1  # Base spacing between nodes on x-axis
+    y_offset = 0
+    y_increment = 0.2  # Increment for spreading nodes vertically
+    
+    for idx, schedule in enumerate(sorted_schedules):
+        x = schedule_to_obj[schedule] * spacing
+        y = y_offset
+        positions[schedule] = (x, y)
+        y_offset += y_increment  # Spread vertically to prevent overlap
+    
+    # Assign positions to graph nodes
+    nx.set_node_attributes(G, positions, 'pos')
+    
+    # 9. Normalize objective values for color mapping
+    min_obj = min(objective_values)
+    max_obj = max(objective_values)
+    if max_obj - min_obj == 0:
+        normalized_values = [0.5 for _ in objective_values]
+    else:
+        normalized_values = [(obj - min_obj) / (max_obj - min_obj) for obj in objective_values]
+    
+    schedule_to_color = {schedule: norm for schedule, norm in zip(schedule_tuples, normalized_values)}
+    
+    # 10. Create edge traces with arrows and annotations
+    edge_traces = []
+    arrow_annotations = []
+    
+    for edge in G.edges():
+        source, target = edge
+        source_x, source_y = positions[source]
+        target_x, target_y = positions[target]
+        
+        # Draw the edge as a line
+        edge_traces.append(
+            go.Scatter(
+                x=[source_x, target_x, None],
+                y=[source_y, target_y, None],
+                mode='lines',
+                line=dict(width=1, color='#888'),
+                hoverinfo='none'
+            )
+        )
+        
+        # Calculate the difference in objective values
+        obj_diff = schedule_to_obj[source] - schedule_to_obj[target]
+        
+        # Add arrow annotation
+        arrow_annotations.append(dict(
+            ax=source_x,
+            ay=source_y,
+            x=target_x,
+            y=target_y,
+            xref='x',
+            yref='y',
+            axref='x',
+            ayref='y',
+            showarrow=True,
+            arrowhead=2,
+            arrowsize=1,
+            arrowwidth=1,
+            arrowcolor="#000000",
+            opacity=0.5
+        ))
+        
+        # Calculate midpoint for the difference label
+        mid_x = (source_x + target_x) / 2
+        mid_y = (source_y + target_y) / 2
+        
+        # Add text annotation for the difference
+        arrow_annotations.append(dict(
+            x=mid_x,
+            y=mid_y,
+            text=f"{obj_diff:.2f}",
+            showarrow=False,
+            xref='x',
+            yref='y',
+            font=dict(color='blue', size=10),
+            align='center'
+        ))
+    
+    # 11. Create node traces
+    node_x = []
+    node_y = []
+    node_text = []
+    node_color = []
+    
+    for schedule in schedule_tuples:
+        x, y = positions[schedule]
+        node_x.append(x)
+        node_y.append(y)
+        node_text.append(str(schedule))
+        node_color.append(schedule_to_color[schedule])
+    
+    node_trace = go.Scatter(
+        x=node_x,
+        y=node_y,
+        mode='markers+text',
+        text=node_text,
+        textposition="top center",
+        hovertext=[f"Objective: {obj:.2f}" for obj in objective_values],
+        hoverinfo='text',
+        marker=dict(
+            showscale=True,
+            colorscale=[
+                [0.0, 'rgb(165,0,38)'],    # Deep Red
+                [1.0, 'rgb(255,255,255)']  # White
+            ],
+            reversescale=True,
+            color=node_color,
+            size=10,
+            colorbar=dict(
+                thickness=15,
+                title=dict(text='Objective Value', side='right'),
+                xanchor='left',
+            ),
+            line_width=2
+        )
+    )
+    
+    # 12. Assemble the figure with edge traces and node traces
+    fig = go.Figure(data=edge_traces + [node_trace],
+                    layout=go.Layout(
+                        title=dict(
+                            text="Network of Schedules",
+                            font=dict(size=16)
+                        ),
+                        showlegend=False,
+                        hovermode='closest',
+                        margin=dict(b=20, l=5, r=5, t=40),
+                        annotations=arrow_annotations + [dict(
+                            text="Created with NetworkX and Plotly",
+                            showarrow=False,
+                            xref="paper", yref="paper",
+                            x=0.005, y=-0.002
+                        )],
+                        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)
+                    )
+                   )
+    
+    return fig
+```
+
+```{python}
+# Create_schedule_network function test
+
+def create_schedule_network_from_lists_test():
+  
+    schedules = [
+        [3, 2, 1, 0, 0, 0],
+        [2, 3, 1, 0, 0, 0],
+        [3, 1, 2, 0, 0, 0],
+        [4, 0, 1, 0, 0, 0],
+        # Add more schedules as needed
+    ]
+    
+    objective_values = [
+        10.5,
+        9.8,
+        11.2,
+        8.7,
+        # Corresponding objective values
+    ]
+    
+    # Create the network graph
+    fig = create_schedule_network(schedules, objective_values, echo=True)
+    
+    # Display the graph
+    fig.show()
+    
+create_schedule_network_from_lists()
+```
+```{python}
+def local_search_w_intermediates(
+    x: List[int],
+    d: int,
+    q: float,
+    convolutions: any,  # Replace 'any' with the actual type if known
+    w: float,
+    v_star: any,        # Replace 'any' with the actual type if known
+    size: int = 2,
+    echo: bool = False
+) -> Tuple[np.ndarray, float, List[Tuple[np.ndarray, float]]]:
+    """
+    Performs a local search to find an optimal schedule, saving intermediate solutions.
+
+    Parameters:
+    - x (List[int]): Initial schedule.
+    - d (int): Duration threshold.
+    - q (float): No-show probability.
+    - convolutions (any): Precomputed convolutions (replace 'any' with actual type).
+    - w (float): Weight for the objective function.
+    - v_star (any): Some precomputed value or structure (replace 'any' with actual type).
+    - size (int): Maximum number of patients to switch in the neighborhood.
+    - echo (bool): If True, prints debug information.
+
+    Returns:
+    - x_star (np.ndarray): The best schedule found.
+    - c_star (float): The cost of the best schedule.
+    - intermediates (List[Tuple[np.ndarray, float]]): List of intermediate solutions and their costs.
+    """
+    
+    # Initialize the best solution found so far 'x_star' to the input vector 'x'
+    x_star = np.array(x).flatten()  # Ensure it's a 1D array
+
+    # Calculate initial objectives and cost
+    objectives_star = calculate_objective_serv_time_lookup(x_star, d, q, convolutions)
+    c_star = w * objectives_star[0] + (1 - w) * objectives_star[1]
+
+    # Initialize list of intermediate solutions with the initial solution
+    intermediates = [(x_star.copy(), c_star)]
+
+    # Set the value of 'T' to the length of the input vector 'x'
+    T = len(x_star)
+
+    # Outer loop for the number of patients to switch
+    t = 1
+    while t < size:
+        if echo:
+            print(f'Running local search with t = {t}')
+
+        # Generate the neighborhood of the current best solution 'x_star' with 't' patients switched
+        ids_gen = powerset(range(T), t)
+        neighborhood = get_neighborhood(x_star, v_star, ids_gen)
+        
+        if echo:
+            print(f"Switching {t} patient(s). Size of neighborhood: {len(list(ids_gen))}")
+
+        # Flag to track if a better solution is found
+        found_better_solution = False
+
+        for neighbor in neighborhood:
+            # Calculate objectives for the neighbor
+            objectives = calculate_objective_serv_time_lookup(neighbor, d, q, convolutions)
+            cost = w * objectives[0] + (1 - w) * objectives[1]
+
+            # Compare scalar costs
+            if cost < c_star:
+                x_star = neighbor
+                c_star = cost
+                intermediates.append((x_star.copy(), c_star))
+                
+                if echo:
+                    print(f"Found better solution: {x_star}, cost: {c_star}")
+
+                # Set the flag to restart the outer loop
+                found_better_solution = True
+                break  # Break out of the inner loop to restart search
+
+        # If a better solution was found, restart the search from t = 1
+        if found_better_solution:
+            t = 1  # Restart search with t = 1
+        else:
+            t += 1  # Move to the next neighborhood size if no better solution was found
+
+    # Return the best solution found 'x_star', its cost, and the list of intermediates
+    return x_star, c_star, intermediates
+```
+
+```{python}
+from functions import local_search, calculate_objective_serv_time_lookup
+
+def test_local_search_w_intermediates():
+    """
+    Test the local_search_w_intermediates function against the baseline local_search.
+    """
+
+    # Test parameters
+    T = 10  # Number of time slots
+    N = 5   # Number of patients
+    x_initial = build_welch_bailey_schedule(N, T)
+    d = 2    # Duration threshold
+    q = 0.1  # No-show probability
+    w = 0.1  # Weight for waiting time in the objective
+    v_star = get_v_star(T)
+    convolutions = compute_convolutions([0.3, 0.2, 0.1, 0.05, 0.15, 0.2], N, q)  # Example service time probabilities
+
+    # Run the baseline local_search
+    x_star_baseline, obj_baseline = local_search(
+        x=x_initial,
+        d=d,
+        q=q,
+        convolutions=convolutions,
+        w=w,
+        v_star=v_star,
+        size=2,
+        echo=False
+    )
+
+    # Run the local_search_w_intermediates
+    x_star_intermediates, obj_intermediates, intermediates = local_search_w_intermediates(
+        x=x_initial,
+        d=d,
+        q=q,
+        convolutions=convolutions,
+        w=w,
+        v_star=v_star,
+        size=2,
+        echo=False
+    )
+
+    # Assertions
+    assert np.allclose(x_star_baseline, x_star_intermediates), "Final solutions do not match!"
+    assert np.isclose(obj_baseline, obj_intermediates), "Final objective values do not match!"
+    assert intermediates, "Intermediates list should not be empty!"
+    assert isinstance(intermediates, list), "Intermediates should be a list!"
+    assert all(len(sol) == 2 for sol in intermediates), "Each intermediate entry must be a tuple with (solution, cost)!"
+
+    # Print results
+    print("Baseline solution:", x_star_baseline)
+    print("Baseline cost:", obj_baseline)
+    print("Intermediates:")
+    for i, (sol, cost) in enumerate(intermediates):
+        print(f"Step {i}: Solution={sol}, Cost={cost}")
+
+    print("Test passed: local_search_w_intermediates matches local_search and captures intermediates correctly.")
+
+# Run the test
+test_local_search_w_intermediates()
+```
+
+
