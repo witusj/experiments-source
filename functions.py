@@ -673,7 +673,8 @@ def local_search_w_intermediates(
 
     # Set the value of 'T' to the length of the input vector 'x'
     T = len(x_star)
-
+    # Set the counter for the number of evaluations
+    evaluations = 0
     # Outer loop for the number of patients to switch
     t = 1
     while t < size:
@@ -696,6 +697,7 @@ def local_search_w_intermediates(
             # Calculate objectives for the neighbor
             objectives_neighbor = calculate_objective_serv_time_lookup(neighbor, d, q, convolutions)
             cost_neighbor = w * objectives_neighbor[0] + (1 - w) * objectives_neighbor[1]
+            evaluations += 1
 
             # Compare scalar costs
             if cost_neighbor < c_star:
@@ -718,6 +720,7 @@ def local_search_w_intermediates(
             t += 1  # Move to the next neighborhood size if no better solution was found
 
     # Return the list of schedules and their corresponding objective values
+    print(f"Total evaluations: {evaluations}")
     return schedules, objectives
   
 def get_neighborhood(x, v_star, ids, verbose=False):
