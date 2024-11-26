@@ -16,6 +16,7 @@ book:
         - xgboost-pairwise-ranking-large.qmd
         - xgboost-objective-calc-large.qmd
         - local-search-regressor-large.qmd
+        - appointment-scheduling-heuristics.qmd
 
 bibliography: references.bib
 

@@ -9,6 +9,7 @@ jupyter: python3
 
 ```{python}
 import itertools
+from joblib import Parallel, delayed
 import networkx as nx
 import plotly.graph_objects as go
 import numpy as np
@@ -183,7 +184,7 @@ for idx, (x_initial, x_star) in enumerate(zip(x_initials, x_stars)):
 
 # Update layout properties
 fig.update_layout(
-    height=300 * num_subplots,  # Adjust height based on the number of subplots
+    height=600 * num_subplots,  # Adjust height based on the number of subplots
     title=f"Optimal Schedules Across Different Values of N\n(T={T}, w={w})",
     xaxis_title="Time Slot (x)",
     yaxis_title="# of Patients (y)",
@@ -207,6 +208,36 @@ fig.update_layout(legend=dict(
 # Show the Plotly figure
 fig.show()
 ```
+
+::: column-screen
+```{python}
+for idx, (n, schedules, objectives) in enumerate(zip(N, schedules_list, objectives_list), start=1):
+    print(f'Processing N={n}, number of schedules: {len(schedules)}')
+    
+    # Create individual network graph
+    individual_fig = create_schedule_network_from_lists(
+        schedules=schedules,
+        objective_values=objectives,
+        echo=False
+    )
+    
+    individual_fig.update_layout(
+        autosize=False,
+        width=1500,
+        height=1800,
+        margin=dict(
+            l=50,
+            r=50,
+            b=100,
+            t=100,
+            pad=4
+        )
+    )
+    
+    # Show the individual network graph
+    individual_fig.show()
+```
+:::
 
 ```{python}
 # Function to process a single N
@@ -237,12 +268,9 @@ v_star = get_v_star(T)
 results = []
 
 start = time.time()
-# Use ThreadPoolExecutor for parallelism
-with ThreadPoolExecutor() as executor:
-    # Map the function to the range of N
-    futures = [executor.submit(process_schedule, n, T, s, d, q, w, v_star) for n in N]
-    for future in futures:
-        results.append(future.result())
+
+# Parallelize the process_schedule function using Joblib
+results = Parallel(n_jobs=-1)(delayed(process_schedule)(n, T, s, d, q, w, v_star) for n in N)
 
 end = time.time()
 
@@ -337,6 +365,19 @@ for idx, (n, schedules, objectives) in enumerate(zip(N, schedules_list, objectiv
         echo=False
     )
     
+    individual_fig.update_layout(
+        autosize=False,
+        width=1500,
+        height=1800,
+        margin=dict(
+            l=50,
+            r=50,
+            b=100,
+            t=100,
+            pad=4
+        )
+    )
+    
     # Show the individual network graph
     individual_fig.show()
 ```
@@ -403,6 +444,19 @@ for idx, (n, schedules, objectives) in enumerate(zip(N, schedules_list, objectiv
         echo=False
     )
     
+    individual_fig.update_layout(
+    autosize=False,
+    width=1500,
+    height=1800,
+    margin=dict(
+        l=50,
+        r=50,
+        b=100,
+        t=100,
+        pad=4
+        )
+    )
+    
     # Show the individual network graph
     individual_fig.show()
 ```
@@ -425,7 +479,7 @@ def process_schedule(n, T, s, d, q, w, v_star):
     }
 
 # Parameters
-N = range(21, 24)
+N = range(21, 22)
 T = 20
 s = [0.3, 0.2, 0.1, 0.05, 0.15, 0.2]
 d = 2
@@ -467,6 +521,19 @@ for idx, (n, schedules, objectives) in enumerate(zip(N, schedules_list, objectiv
         schedules=schedules,
         objective_values=objectives,
         echo=False
+    )
+    
+    individual_fig.update_layout(
+    autosize=False,
+    width=1500,
+    height=1800,
+    margin=dict(
+        l=50,
+        r=50,
+        b=100,
+        t=100,
+        pad=4
+        )
     )
     
     # Show the individual network graph
