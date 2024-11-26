@@ -1289,6 +1289,7 @@ def create_schedule_network_var_edges(N: int, T: int, s: List[float], d: int, q:
 def create_schedule_network_from_lists(
     schedules: List[List[int]],
     objective_values: List[float],
+    delta = False,
     echo: bool = False
 ) -> go.Figure:
     """
@@ -1360,30 +1361,30 @@ def create_schedule_network_from_lists(
                 hoverinfo='none'
             )
         )
-        
-        # Calculate midpoint for annotation
-        mid_x = (x0 + x1) / 2
-        mid_y = (y0 + y1) / 2
-        
-        # Objective difference
-        obj_diff = objective_values[target] - objective_values[source]
-        
-        # Edge annotation
-        annotations.append(
-            dict(
-                x=mid_x,
-                y=mid_y,
-                text=f"{obj_diff:.2f}",
-                showarrow=True,
-                arrowhead=2,
-                ax=mid_x,
-                ay=mid_y + (0.3 if y1 >= y0 else -0.3),  # Offset direction based on edge slope
-                xref='x',
-                yref='y',
-                font=dict(color='blue', size=12),
-                align='center'
-            )
-        )
+        if delta:
+          # Calculate midpoint for annotation
+          mid_x = (x0 + x1) / 2
+          mid_y = (y0 + y1) / 2
+          
+          # Objective difference
+          obj_diff = objective_values[target] - objective_values[source]
+          
+          # Edge annotation
+          annotations.append(
+              dict(
+                  x=mid_x,
+                  y=mid_y,
+                  text=f"{obj_diff:.2f}",
+                  showarrow=True,
+                  arrowhead=2,
+                  ax=mid_x,
+                  ay=mid_y + (0.3 if y1 >= y0 else -0.3),  # Offset direction based on edge slope
+                  xref='x',
+                  yref='y',
+                  font=dict(color='blue', size=12),
+                  align='center'
+              )
+          )
     
     # 7. Create node trace
     node_trace = go.Scatter(
