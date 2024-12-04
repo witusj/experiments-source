@@ -260,7 +260,88 @@ def build_welch_bailey_schedule(N, T):
 
     return schedule
 
-def create_neighbors_list(s: List[int]) -> (List[int], List[int]):
+def build_quasi_optimal_schedule(N, T):
+    """
+    Build a quasi-optimal schedule starting with [2, 1, 1, 0, ...] 
+    and then sequences of [1, 1, 1, 1, 0].
+
+    Parameters:
+    N (int): Number of patients to be scheduled.
+    T (int): Number of time intervals in the schedule.
+
+    Returns:
+    list: A schedule of length T where each item represents the number of patients scheduled
+          at the corresponding time interval.
+    """
+    # Initialize the schedule with zeros
+    schedule = [0] * T
+
+    # Schedule the first four time slots: [2, 1, 1, 0]
+    schedule[0] = 2
+    schedule[1] = 1
+    schedule[2] = 1
+    # Time slot 3 remains 0 as per the pattern
+    remaining_patients = N - sum(schedule)
+
+    # Start from time slot 4
+    t = 4
+
+    # Continue scheduling in sequences of [1, 1, 1, 1, 0]
+    while remaining_patients > 0 and t < T - 1:
+        for i in range(5):
+            if i < 4 and t < T - 1:
+                # Schedule 1 patient for the first four slots
+                schedule[t] = 1
+                remaining_patients -= 1
+                t += 1
+                if remaining_patients <= 0:
+                    break
+            else:
+                # Leave the fifth slot empty (0 patients)
+                t += 1
+                if t >= T - 1:
+                    break
+        if t >= T - 1:
+            break
+
+    # Push any remaining patients to the last time slot
+    if remaining_patients > 0:
+        schedule[-1] += remaining_patients
+
+    return schedule
+
+def create_neighbors_list(s: list[int], v_star: np.ndarray) -> (list[int], list[int]):
+    """
+    Create a set of pairs of schedules that are from the same neighborhood.
+    
+    Parameters:
+      s (list[int]): A list of integers with |s| = T and sum N.
+      v_star (np.ndarray): Precomputed vectors V* of length T.
+      
+    Returns:
+      tuple(list[int], list[int]): A pair of schedules.
+    """
+    T = len(s)
+
+    # Precompute binomial coefficients (weights for random.choices)
+    binom_coeff = [math.comb(T, i) for i in range(1, T)]
+
+    # Choose a random value of i with the corresponding probability
+    i = random.choices(range(1, T), weights=binom_coeff)[0]
+
+    # Instead of generating the full list of combinations, sample one directly
+    j = random.sample(range(T), i)
+    
+    s_p = s.copy()
+    for k in j:
+        s_temp = np.array(s_p) + v_star[k]
+        s_temp = s_temp.astype(int)
+        if np.all(s_temp >= 0):
+            s_p = s_temp.astype(int).tolist()
+        
+    return s, s_p
+  
+def create_neighbor(s: List[int]) -> (List[int], List[int]):
     """
     Create a neighbor schedule from the given schedule s.
 
