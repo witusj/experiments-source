@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.551">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Large instance XGBoost classification model for pairwise ranking with quasi optimal initial schedule.</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="xgboost-pairwise-ranking-large-w-opt-init_files/libs/clipboard/clipboard.min.js"></script>
+<script src="xgboost-pairwise-ranking-large-w-opt-init_files/libs/quarto-html/quarto.js"></script>
+<script src="xgboost-pairwise-ranking-large-w-opt-init_files/libs/quarto-html/popper.min.js"></script>
+<script src="xgboost-pairwise-ranking-large-w-opt-init_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="xgboost-pairwise-ranking-large-w-opt-init_files/libs/quarto-html/anchor.min.js"></script>
+<link href="xgboost-pairwise-ranking-large-w-opt-init_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="xgboost-pairwise-ranking-large-w-opt-init_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="xgboost-pairwise-ranking-large-w-opt-init_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="xgboost-pairwise-ranking-large-w-opt-init_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="xgboost-pairwise-ranking-large-w-opt-init_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script src="xgboost-pairwise-ranking-large-w-opt-init_files/libs/quarto-diagram/mermaid.min.js"></script>
+<script src="xgboost-pairwise-ranking-large-w-opt-init_files/libs/quarto-diagram/mermaid-init.js"></script>
+<link href="xgboost-pairwise-ranking-large-w-opt-init_files/libs/quarto-diagram/mermaid.css" rel="stylesheet">
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Large instance XGBoost classification model for pairwise ranking with quasi optimal initial schedule.</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="objective" class="level2">
+<h2 class="anchored" data-anchor-id="objective">Objective</h2>
+<p><strong>Objective</strong>: <em>Testing the performance of an XGBoost model trained for ranking pairwise schedules.</em></p>
+</section>
+<section id="background" class="level2">
+<h2 class="anchored" data-anchor-id="background">Background</h2>
+<p><em>In this experiment we develop a Machine Learning model using XGBoost that can evaluate two neighboring schedules and rank them according to preference. This ranking model can be applied to quickly guide the search process towards a ‘good enough’ solution.</em></p>
+<p><em>The choice of using an ordinal model instead of a cardinal model is based on the consideration that it is significantly easier to determine whether alternative A is superior to B than to quantify the exact difference between A and B. This makes intuitive sense when considering the scenario of holding two identical-looking packages and deciding which one is heavier, as opposed to estimating the precise weight difference between them. <span class="citation" data-cites="ho_ordinal_2000">[@ho_ordinal_2000]</span>.</em></p>
+</section>
+<section id="hypothesis" class="level2">
+<h2 class="anchored" data-anchor-id="hypothesis">Hypothesis</h2>
+<p><em>An XGBoost ranking model achieves superior computational efficiency compared to evaluating each element of a pair individually, leading to faster overall performance in ranking tasks.</em></p>
+</section>
+<section id="methodology" class="level2">
+<h2 class="anchored" data-anchor-id="methodology">Methodology</h2>
+<section id="tools-and-materials" class="level3">
+<h3 class="anchored" data-anchor-id="tools-and-materials">Tools and Materials</h3>
+<p><em>We use packages from <a href="https://scikit-learn.org/stable/index.html">Scikit-learn</a> to prepare training data and evaluate the model and the <code>XGBClassifier</code> interface from the <a href="https://xgboost.readthedocs.io/en/latest/index.html">XGBoost</a> library.</em></p>
+<div id="load-packages" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> time</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> math</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> train_test_split, cross_val_score, StratifiedKFold, GridSearchCV</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.base <span class="im">import</span> clone</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> xgboost <span class="im">as</span> xgb</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> xgboost.callback <span class="im">import</span> TrainingCallback</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> plotly.graph_objects <span class="im">as</span> go</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pickle</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> random</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.optimize <span class="im">import</span> minimize</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> itertools <span class="im">import</span> combinations</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="experimental-design" class="level3">
+<h3 class="anchored" data-anchor-id="experimental-design">Experimental Design</h3>
+<p><em>To compare an XGBoost Machine Learning model with a simple evaluation of each individual element of the pair, we will use a pairwise ranking approach. The objective is to rank two neighboring schedules according to preference.</em></p>
+<div id="f91bea57" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> functions <span class="im">import</span> compute_convolutions, get_v_star</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: initialize-parameters</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>N <span class="op">=</span> <span class="dv">22</span> <span class="co"># Number of patients</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>T <span class="op">=</span> <span class="dv">20</span> <span class="co"># Number of intervals</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> <span class="dv">5</span> <span class="co"># Length of each interval</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>max_s <span class="op">=</span> <span class="dv">20</span> <span class="co"># Maximum service time</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>q <span class="op">=</span> <span class="fl">0.20</span> <span class="co"># Probability of a scheduled patient not showing up</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>w <span class="op">=</span> <span class="fl">0.1</span> <span class="co"># Weight for the waiting time in objective function</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>l <span class="op">=</span> <span class="dv">10</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>num_schedules <span class="op">=</span> <span class="dv">10000</span> <span class="co"># Number of schedules to sample</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>v_star <span class="op">=</span> get_v_star(T)</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Size neighnorhood: </span><span class="sc">{</span><span class="dv">2</span><span class="op">**</span><span class="bu">len</span>(v_star) <span class="op">-</span> <span class="dv">2</span><span class="sc">}</span><span class="ss">, sample size: </span><span class="sc">{</span>num_schedules<span class="sc">}</span><span class="ss"> = </span><span class="sc">{</span><span class="dv">100</span><span class="op">*</span>num_schedules <span class="op">/</span> (<span class="dv">2</span><span class="op">**</span><span class="bu">len</span>(v_star) <span class="op">-</span> <span class="dv">2</span>)<span class="sc">:.2f}</span><span class="ss">% of neighborhood"</span>)</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Create service time distribution</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> generate_weighted_list(max_s, l, i):</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Initialize an array of T+1 values, starting with zero</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    values <span class="op">=</span> np.zeros(T <span class="op">+</span> <span class="dv">1</span>)</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Objective function: Sum of squared differences between current weighted average and the desired l</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> objective(x):</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>        weighted_avg <span class="op">=</span> np.dot(np.arange(<span class="dv">1</span>, T <span class="op">+</span> <span class="dv">1</span>), x) <span class="op">/</span> np.<span class="bu">sum</span>(x)</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> (weighted_avg <span class="op">-</span> l) <span class="op">**</span> <span class="dv">2</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Constraint: The sum of the values from index 1 to T must be 1</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>    constraints <span class="op">=</span> ({</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>        <span class="st">'type'</span>: <span class="st">'eq'</span>,</span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>        <span class="st">'fun'</span>: <span class="kw">lambda</span> x: np.<span class="bu">sum</span>(x) <span class="op">-</span> <span class="dv">1</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>    })</span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Bounds: Each value should be between 0 and 1</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>    bounds <span class="op">=</span> [(<span class="dv">0</span>, <span class="dv">1</span>)] <span class="op">*</span> T</span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Initial guess: Random distribution that sums to 1</span></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>    initial_guess <span class="op">=</span> np.random.dirichlet(np.ones(T))</span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Optimization: Minimize the objective function subject to the sum and bounds constraints</span></span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>    result <span class="op">=</span> minimize(objective, initial_guess, method<span class="op">=</span><span class="st">'SLSQP'</span>, bounds<span class="op">=</span>bounds, constraints<span class="op">=</span>constraints)</span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Set the values in the array (index 0 remains 0)</span></span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a>    values[<span class="dv">1</span>:] <span class="op">=</span> result.x</span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Now we need to reorder the values as per the new requirement</span></span>
+<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a>    first_part <span class="op">=</span> np.sort(values[<span class="dv">1</span>:i<span class="op">+</span><span class="dv">1</span>])  <span class="co"># Sort the first 'i' values in ascending order</span></span>
+<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a>    second_part <span class="op">=</span> np.sort(values[i<span class="op">+</span><span class="dv">1</span>:])[::<span class="op">-</span><span class="dv">1</span>]  <span class="co"># Sort the remaining 'T-i' values in descending order</span></span>
+<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Combine the sorted parts back together</span></span>
+<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a>    values[<span class="dv">1</span>:i<span class="op">+</span><span class="dv">1</span>] <span class="op">=</span> first_part</span>
+<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a>    values[i<span class="op">+</span><span class="dv">1</span>:] <span class="op">=</span> second_part</span>
+<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> values</span>
+<span id="cb2-52"><a href="#cb2-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a>i <span class="op">=</span> <span class="dv">5</span>  <span class="co"># First 5 highest values in ascending order, rest in descending order</span></span>
+<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a>s <span class="op">=</span> generate_weighted_list(max_s, l, i)</span>
+<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(s)</span>
+<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Sum:"</span>, np.<span class="bu">sum</span>(s[<span class="dv">1</span>:]))  <span class="co"># This should be 1</span></span>
+<span id="cb2-57"><a href="#cb2-57" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Weighted service time:"</span>, np.dot(np.arange(<span class="dv">1</span>, T <span class="op">+</span> <span class="dv">1</span>), s[<span class="dv">1</span>:]))  <span class="co"># This should be close to l</span></span>
+<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a>convolutions <span class="op">=</span> compute_convolutions(s, N, q)</span>
+<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a>file_path_parameters <span class="op">=</span> <span class="ss">f"datasets/parameters_</span><span class="sc">{</span>N<span class="sc">}</span><span class="ss">_</span><span class="sc">{</span>T<span class="sc">}</span><span class="ss">_</span><span class="sc">{</span>l<span class="sc">}</span><span class="ss">.pkl"</span></span>
+<span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> <span class="bu">open</span>(file_path_parameters, <span class="st">'wb'</span>) <span class="im">as</span> f:</span>
+<span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a>    pickle.dump({</span>
+<span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a>      <span class="st">'N'</span>: N,</span>
+<span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a>      <span class="st">'T'</span>: T,</span>
+<span id="cb2-65"><a href="#cb2-65" aria-hidden="true" tabindex="-1"></a>      <span class="st">'d'</span>: d,</span>
+<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a>      <span class="st">'max_s'</span>: max_s,</span>
+<span id="cb2-67"><a href="#cb2-67" aria-hidden="true" tabindex="-1"></a>      <span class="st">'q'</span>: q,</span>
+<span id="cb2-68"><a href="#cb2-68" aria-hidden="true" tabindex="-1"></a>      <span class="st">'w'</span>: w,</span>
+<span id="cb2-69"><a href="#cb2-69" aria-hidden="true" tabindex="-1"></a>      <span class="st">'l'</span>: l,</span>
+<span id="cb2-70"><a href="#cb2-70" aria-hidden="true" tabindex="-1"></a>      <span class="st">'num_schedules'</span>: num_schedules,</span>
+<span id="cb2-71"><a href="#cb2-71" aria-hidden="true" tabindex="-1"></a>      <span class="st">'convolutions'</span>: convolutions</span>
+<span id="cb2-72"><a href="#cb2-72" aria-hidden="true" tabindex="-1"></a>      }, f)</span>
+<span id="cb2-73"><a href="#cb2-73" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Data saved successfully to '</span><span class="sc">{</span>file_path_parameters<span class="sc">}</span><span class="ss">'"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Size neighnorhood: 1048574, sample size: 10000 = 0.95% of neighborhood
+[0.         0.02348673 0.05237216 0.05910574 0.0890229  0.09752802
+ 0.18044074 0.17548084 0.06900127 0.04467913 0.04216347 0.03839354
+ 0.03256631 0.02420419 0.02151718 0.01804834 0.00986798 0.00915195
+ 0.00505139 0.00408317 0.00383496]
+Sum: 1.0000000001009117
+Weighted service time: 7.094467246882636
+Data saved successfully to 'datasets/parameters_22_20_10.pkl'</code></pre>
+</div>
+</div>
+<p><em>We will create a random set of pairs of neighboring schedules with</em> <span class="math inline">\(N = 22\)</span> patients and <span class="math inline">\(T = 20\)</span> intervals of length <span class="math inline">\(d = 5\)</span>.</p>
+<p><em>A neighbor of a schedule x is considered a schedule x’ where single patients have been shifted one interval to the left. Eg: ([2,1,1,2], [1,2,0,3]) are neighbors and ([2,1,1,2], [2,1,3,0]) are not, because [1,2,0,3] - [2,1,1,2] = [-1, 1, -1, 1] and [2,1,3,0] - [2,1,1,2] = [0, 0, 2, -2].</em></p>
+<p><em>Service times will have a discrete distribution. The probability of a scheduled patient not showing up will be</em> <span class="math inline">\(q = 0.2\)</span>.</p>
+<p><em>The objective function will be the weighted average of the total waiting time of all patients and overtime. The model will be trained to predict which of the two neighboring schedules has the lowest objective value. The prediction time will be recorded. Then the same schedules will be evaluated by computing the objective value and then ranked.</em></p>
+</section>
+<section id="variables" class="level3">
+<h3 class="anchored" data-anchor-id="variables">Variables</h3>
+<ul>
+<li><strong>Independent Variables</strong>: <em>A list of tuples with pairs of neighboring schedules.</em></li>
+<li><strong>Dependent Variables</strong>: <em>A list with rankings for each tuple of pairwise schedules. Eg: If the rank for ([2,1,1], [1,1,2]) equals 0 this means that the schedule with index 0 ([2,1,1]) has the lowest objective value.</em></li>
+</ul>
+</section>
+<section id="data-collection" class="level3">
+<h3 class="anchored" data-anchor-id="data-collection">Data Collection</h3>
+<p><em>The data set will be generated using simulation in which random samples will be drawn from the population of all possible schedules. For each sample a random neighboring schedule will be created.</em></p>
+</section>
+<section id="sample-size-and-selection" class="level3">
+<h3 class="anchored" data-anchor-id="sample-size-and-selection">Sample Size and Selection</h3>
+<p><strong>Sample Size</strong>: <em>The total population size equals</em> <span class="math inline">\({{N + T -1}\choose{N}} \approx\)</span> 244663.0 mln. For this experiment we will be using a relatively small sample of 10000 pairs of schedules.</p>
+<p><strong>Sample Selection</strong>: <em>The samples will be drawn from a lexicographic order of possible schedules in order to accurately reflect the combinatorial nature of the problem and to ensure unbiased sampling from the entire combinatorial space.</em></p>
+</section>
+<section id="experimental-procedure" class="level3">
+<h3 class="anchored" data-anchor-id="experimental-procedure">Experimental Procedure</h3>
+<p><em>The experiment involves multiple steps, beginning with creating an initial quasi optimal schedule and ending with training and testing a model.The diagram below illustrates the sequence of steps.</em></p>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart TD
+    A[Create a quasi-optimal schedule] --&gt;|"x_hat"| B["Create a sample from the neighborhood of x_hat, H(x_hat)"]
+    B --&gt;|"R ~ H(x^hat)"| C["Calculate the objective value for each schedule r in the sample R and the ranking"]
+    C --&gt;|"F = f(r) for each r in R"| D["Train and test ranking model M using R and f(R)"]
+    D --&gt;|"M"| E["Predict the ranking for pairs of neighboring schedules"]
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p><strong>Step 1</strong>: <em>Create a quasi optimal schedule</em> <span class="math inline">\(\hat{x}\)</span></p>
+<div id="create-quasi-optimal-schedule" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> functions <span class="im">import</span> build_quasi_optimal_schedule</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>x_hat <span class="op">=</span> build_quasi_optimal_schedule(N, T)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"The initial schedule is: </span><span class="sc">{</span>x_hat<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>The initial schedule is: [2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6]</code></pre>
+</div>
+</div>
+<p><strong>Step 2</strong>: <em>Create sample</em> <span class="math inline">\(R\)</span> of neighboring schedules for <span class="math inline">\(\hat{x}\)</span></p>
+<div id="create-neighbors" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> functions <span class="im">import</span> create_neighbors_list</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>start <span class="op">=</span> time.time()</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>R <span class="op">=</span> [create_neighbors_list(x_hat, v_star) <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(num_schedules)]</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>end <span class="op">=</span> time.time()</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> r <span class="kw">in</span> R[:<span class="dv">5</span>]: <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>r[<span class="dv">0</span>]<span class="sc">}</span><span class="ch">\n</span><span class="sc">{</span>r[<span class="dv">1</span>]<span class="sc">}</span><span class="ch">\n</span><span class="sc">{</span>[a <span class="op">-</span> b <span class="cf">for</span> a, b <span class="kw">in</span> <span class="bu">zip</span>(r[<span class="dv">0</span>], r[<span class="dv">1</span>])]<span class="sc">}</span><span class="ch">\n\n</span><span class="ss">"</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>training_set_feat_time <span class="op">=</span> end <span class="op">-</span> start</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Processing time: </span><span class="sc">{</span>training_set_feat_time<span class="sc">}</span><span class="ss"> seconds</span><span class="ch">\n</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6]
+[2, 2, 0, 0, 1, 1, 1, 1, 0, 2, 1, 0, 1, 0, 2, 1, 0, 1, 0, 6]
+[0, -1, 1, 0, 0, 0, 0, 0, 0, -1, 0, 1, 0, 0, -1, 0, 1, 0, 0, 0]
+
+
+[2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6]
+[1, 2, 0, 1, 0, 1, 2, 0, 0, 1, 1, 2, 0, 1, 1, 1, 1, 0, 1, 6]
+[1, -1, 1, -1, 1, 0, -1, 1, 0, 0, 0, -1, 1, -1, 0, 0, 0, 1, -1, 0]
+
+
+[2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6]
+[2, 0, 1, 1, 1, 1, 0, 1, 0, 2, 1, 0, 1, 1, 0, 2, 1, 0, 0, 7]
+[0, 1, 0, -1, 0, 0, 1, 0, 0, -1, 0, 1, 0, -1, 1, -1, 0, 1, 0, -1]
+
+
+[2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6]
+[2, 1, 1, 0, 1, 0, 2, 0, 1, 0, 2, 1, 0, 0, 1, 1, 1, 1, 0, 7]
+[0, 0, 0, 0, 0, 1, -1, 1, -1, 1, -1, 0, 1, 0, 0, 0, 0, 0, 0, -1]
+
+
+[2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6]
+[3, 0, 1, 1, 1, 0, 2, 1, 0, 1, 1, 0, 1, 0, 2, 1, 1, 0, 0, 6]
+[-1, 1, 0, -1, 0, 1, -1, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 1, 0, 0]
+
+
+
+Processing time: 1.0238380432128906 seconds
+</code></pre>
+</div>
+</div>
+<p><strong>Step 3</strong>: <em>For each schedule in each pair calculate the objective. For each pair save the index of the schedule that has the lowest objective value.</em></p>
+<div id="calculate-objectives" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> functions <span class="im">import</span> calculate_objective_serv_time_lookup</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate objective for initial schedule x_hat</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>wt_x_hat, ot_x_hat <span class="op">=</span> calculate_objective_serv_time_lookup(x_hat, d, q, convolutions)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>f_x_hat <span class="op">=</span> w <span class="op">*</span> wt_x_hat <span class="op">+</span> (<span class="dv">1</span> <span class="op">-</span> w) <span class="op">*</span> ot_x_hat</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate objectives for neighbors of x_hat</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>start <span class="op">=</span> time.time()</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>F <span class="op">=</span> [</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    w <span class="op">*</span> result[<span class="dv">0</span>] <span class="op">+</span> (<span class="dv">1</span> <span class="op">-</span> w) <span class="op">*</span> result[<span class="dv">1</span>]</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> r <span class="kw">in</span> R</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> result <span class="kw">in</span> [calculate_objective_serv_time_lookup(r[<span class="dv">1</span>], d, q, convolutions)]</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>end <span class="op">=</span> time.time()</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>training_set_lab_time <span class="op">=</span> end <span class="op">-</span> start</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Rank schedules according to lowest objective</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>objectives <span class="op">=</span> [[f_x_hat, f] <span class="cf">for</span> f <span class="kw">in</span> F]</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>rankings <span class="op">=</span> np.argmin(objectives, axis<span class="op">=</span><span class="dv">1</span>).tolist()</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">5</span>):</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>  <span class="bu">print</span>(<span class="ss">f"Objectives: </span><span class="sc">{</span>R[i]<span class="sc">,</span> objectives[i]<span class="sc">}</span><span class="ss">, Ranking: </span><span class="sc">{</span>rankings[i]<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"# superior schedules: </span><span class="sc">{</span><span class="bu">sum</span>(rankings)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Processing time: </span><span class="sc">{</span>training_set_lab_time<span class="sc">}</span><span class="ss"> seconds</span><span class="ch">\n</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Objectives: (([2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6], [2, 2, 0, 0, 1, 1, 1, 1, 0, 2, 1, 0, 1, 0, 2, 1, 0, 1, 0, 6]), [57.007246486621625, 58.49792979805997]), Ranking: 0
+Objectives: (([2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6], [1, 2, 0, 1, 0, 1, 2, 0, 0, 1, 1, 2, 0, 1, 1, 1, 1, 0, 1, 6]), [57.007246486621625, 59.908309920923344]), Ranking: 0
+Objectives: (([2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6], [2, 0, 1, 1, 1, 1, 0, 1, 0, 2, 1, 0, 1, 1, 0, 2, 1, 0, 0, 7]), [57.007246486621625, 61.20994881225388]), Ranking: 0
+Objectives: (([2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6], [2, 1, 1, 0, 1, 0, 2, 0, 1, 0, 2, 1, 0, 0, 1, 1, 1, 1, 0, 7]), [57.007246486621625, 61.27888491809883]), Ranking: 0
+Objectives: (([2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6], [3, 0, 1, 1, 1, 0, 2, 1, 0, 1, 1, 0, 1, 0, 2, 1, 1, 0, 0, 6]), [57.007246486621625, 59.071816663785185]), Ranking: 0
+# superior schedules: 320
+
+Processing time: 10.029011011123657 seconds
+</code></pre>
+</div>
+</div>
+<p><strong>Step 4</strong>: <em>Create training and test sets.</em></p>
+<div id="prepare-training-set" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Prepare the dataset</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> []</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> r <span class="kw">in</span> R:</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    X.append(r[<span class="dv">0</span>] <span class="op">+</span> r[<span class="dv">1</span>])</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> np.array(X)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> np.array(rankings)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Split the dataset into training and test sets</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>X_train, X_test, y_train, y_test <span class="op">=</span> train_test_split(X, y, test_size<span class="op">=</span><span class="fl">0.2</span>, random_state<span class="op">=</span><span class="dv">42</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>Step 5</strong>: <em>Train the XGBoost model.</em></p>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart TD
+    A[Start] --&gt; B[Initialize StratifiedKFold]
+    B --&gt; C[Initialize XGBClassifier]
+    C --&gt; D[Set results as empty list]
+    D --&gt; E[Loop through each split of cv split]
+    E --&gt; F[Get train and test indices]
+    F --&gt; G[Split X and y into X_train, X_test, y_train, y_test]
+    G --&gt; H[Clone the classifier]
+    H --&gt; I[Call fit_and_score function]
+    I --&gt; J[Fit the estimator]
+    J --&gt; K[Score on training set]
+    J --&gt; L[Score on test set]
+    K --&gt; M[Return estimator, train_score, test_score]
+    L --&gt; M
+    M --&gt; N[Append the results]
+    N --&gt; E
+    E --&gt; O[Loop ends]
+    O --&gt; P[Print results]
+    P --&gt; Q[End]
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<div id="hyperparameter-optimization" class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co">#=========================================================================</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="co"># XGBoost regression:</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Parameters:</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co"># n_estimators  "Number of gradient boosted trees. Equivalent to number</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="co">#                of boosting rounds."</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="co"># learning_rate "Boosting learning rate (also known as “eta”)"</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="co"># max_depth     "Maximum depth of a tree. Increasing this value will make</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="co">#                the model more complex and more likely to overfit."</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="co">#=========================================================================</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>clf<span class="op">=</span>xgb.XGBClassifier()</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a><span class="co">#=========================================================================</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a><span class="co"># exhaustively search for the optimal hyperparameters</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a><span class="co">#=========================================================================</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> GridSearchCV</span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a><span class="co"># set up our search grid</span></span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>param_grid <span class="op">=</span> {<span class="st">"max_depth"</span>:    [<span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">7</span>],</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>              <span class="st">"n_estimators"</span>: [<span class="dv">500</span>, <span class="dv">700</span>, <span class="dv">900</span>],</span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>              <span class="st">"learning_rate"</span>: [<span class="fl">0.05</span>, <span class="fl">0.1</span>, <span class="fl">0.15</span>]}</span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a><span class="co"># try out every combination of the above values</span></span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>start <span class="op">=</span> time.time()</span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>search <span class="op">=</span> GridSearchCV(clf, param_grid, cv<span class="op">=</span><span class="dv">5</span>, verbose<span class="op">=</span><span class="dv">3</span>, n_jobs<span class="op">=-</span><span class="dv">1</span>).fit(X_train, y_train)</span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>end <span class="op">=</span> time.time()</span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>hyper_search_time <span class="op">=</span> end <span class="op">-</span> start</span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f'Hyperparameter optimization time: </span><span class="sc">{</span>hyper_search_time<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"The best hyperparameters are "</span>, search.best_params_)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Fitting 5 folds for each of 27 candidates, totalling 135 fits
+Hyperparameter optimization time: 17.897692918777466
+The best hyperparameters are  {'learning_rate': 0.15, 'max_depth': 4, 'n_estimators': 500}</code></pre>
+</div>
+</div>
+<div id="train-model" class="cell" data-execution_count="8">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> CustomCallback(TrainingCallback):</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, period<span class="op">=</span><span class="dv">10</span>):</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.period <span class="op">=</span> period</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> after_iteration(<span class="va">self</span>, model, epoch, evals_log):</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (epoch <span class="op">+</span> <span class="dv">1</span>) <span class="op">%</span> <span class="va">self</span>.period <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>            <span class="bu">print</span>(<span class="ss">f"Epoch </span><span class="sc">{</span>epoch<span class="sc">}</span><span class="ss">, Evaluation log: </span><span class="sc">{</span>evals_log[<span class="st">'validation_0'</span>][<span class="st">'logloss'</span>][epoch]<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">False</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> fit_and_score(estimator, X_train, X_test, y_train, y_test):</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Fit the estimator on the train set and score it on both sets"""</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>    estimator.fit(X_train, y_train, eval_set<span class="op">=</span>[(X_test, y_test)], verbose<span class="op">=</span><span class="dv">0</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>    train_score <span class="op">=</span> estimator.score(X_train, y_train)</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>    test_score <span class="op">=</span> estimator.score(X_test, y_test)</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> estimator, train_score, test_score</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>cv <span class="op">=</span> StratifiedKFold(n_splits<span class="op">=</span><span class="dv">5</span>, shuffle<span class="op">=</span><span class="va">True</span>, random_state<span class="op">=</span><span class="dv">94</span>)</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>clf <span class="op">=</span> xgb.XGBClassifier(</span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>    tree_method<span class="op">=</span><span class="st">"hist"</span>,</span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>    max_depth<span class="op">=</span>search.best_params_[<span class="st">"max_depth"</span>],</span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>    <span class="co"># min_child_weight=model_params["min_child_weight"],</span></span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>    <span class="co"># gamma=model_params["gamma"],</span></span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>    <span class="co"># subsample=model_params["subsample"],</span></span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>    <span class="co"># colsample_bytree=model_params["colsample_bytree"],</span></span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a>    learning_rate<span class="op">=</span>search.best_params_[<span class="st">"learning_rate"</span>],</span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a>    n_estimators<span class="op">=</span>search.best_params_[<span class="st">"n_estimators"</span>],</span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a>    early_stopping_rounds<span class="op">=</span><span class="dv">9</span>,</span>
+<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a>    callbacks<span class="op">=</span>[CustomCallback(period<span class="op">=</span><span class="dv">50</span>)],</span>
+<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a>start <span class="op">=</span> time.time()</span>
+<span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a>results <span class="op">=</span> []</span>
+<span id="cb13-37"><a href="#cb13-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-38"><a href="#cb13-38" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> train_idx, test_idx <span class="kw">in</span> cv.split(X, y):</span>
+<span id="cb13-39"><a href="#cb13-39" aria-hidden="true" tabindex="-1"></a>    X_train, X_test <span class="op">=</span> X[train_idx], X[test_idx]</span>
+<span id="cb13-40"><a href="#cb13-40" aria-hidden="true" tabindex="-1"></a>    y_train, y_test <span class="op">=</span> y[train_idx], y[test_idx]</span>
+<span id="cb13-41"><a href="#cb13-41" aria-hidden="true" tabindex="-1"></a>    est, train_score, test_score <span class="op">=</span> fit_and_score(</span>
+<span id="cb13-42"><a href="#cb13-42" aria-hidden="true" tabindex="-1"></a>        clone(clf), X_train, X_test, y_train, y_test</span>
+<span id="cb13-43"><a href="#cb13-43" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb13-44"><a href="#cb13-44" aria-hidden="true" tabindex="-1"></a>    results.append((est, train_score, test_score))</span>
+<span id="cb13-45"><a href="#cb13-45" aria-hidden="true" tabindex="-1"></a>end <span class="op">=</span> time.time()</span>
+<span id="cb13-46"><a href="#cb13-46" aria-hidden="true" tabindex="-1"></a>training_time <span class="op">=</span> end <span class="op">-</span> start</span>
+<span id="cb13-47"><a href="#cb13-47" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Training time: </span><span class="sc">{</span>training_time<span class="sc">}</span><span class="ss"> seconds</span><span class="ch">\n</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Epoch 49, Evaluation log: 0.04242680395623392
+Epoch 99, Evaluation log: 0.03206626233276341
+Epoch 149, Evaluation log: 0.02779624804034967
+Epoch 199, Evaluation log: 0.02623039299065744
+Epoch 49, Evaluation log: 0.04294085491019359
+Epoch 99, Evaluation log: 0.03344695683992824
+Epoch 149, Evaluation log: 0.02967281087182599
+Epoch 49, Evaluation log: 0.04590032686605992
+Epoch 99, Evaluation log: 0.03537562738171141
+Epoch 149, Evaluation log: 0.0315119342279017
+Epoch 199, Evaluation log: 0.02918998630769415
+Epoch 49, Evaluation log: 0.03735242380765703
+Epoch 99, Evaluation log: 0.02736905137527401
+Epoch 149, Evaluation log: 0.02399353369658394
+Epoch 199, Evaluation log: 0.0224890911438431
+Epoch 49, Evaluation log: 0.0394593557855842
+Epoch 99, Evaluation log: 0.03226582261655176
+Epoch 149, Evaluation log: 0.02989994596646494
+
+Training time: 1.3156979084014893 seconds
+</code></pre>
+</div>
+</div>
+<p><strong>Step 6</strong>: <em>To evaluate the performance of the XGBoost ranking model, we will use Stratified K-Fold Cross-Validation with 5 splits, ensuring each fold maintains the same class distribution as the original dataset. Using StratifiedKFold(n_splits=5, shuffle=True, random_state=94), the dataset will be divided into five folds. In each iteration, the model will be trained on four folds and evaluated on the remaining fold. A custom callback, CustomCallback(period=10), will print the evaluation log every 10 epochs.</em></p>
+<p><em>The fit_and_score function will fit the model and score it on both the training and test sets, storing the results for each fold. This provides insight into the model’s performance across different subsets of the data, helps in understanding how well the model generalizes to unseen data and identifies potential overfitting or underfitting issues. The overall processing time for the cross-validation will also be recorded.</em></p>
+<div id="print-evaluation-results" class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Print results</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, (est, train_score, test_score) <span class="kw">in</span> <span class="bu">enumerate</span>(results):</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Fold </span><span class="sc">{</span>i<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss"> - Train Score (Accuracy): </span><span class="sc">{</span>train_score<span class="sc">:.4f}</span><span class="ss">, Test Score (Accuracy): </span><span class="sc">{</span>test_score<span class="sc">:.4f}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Fold 1 - Train Score (Accuracy): 0.9992, Test Score (Accuracy): 0.9905
+Fold 2 - Train Score (Accuracy): 0.9996, Test Score (Accuracy): 0.9875
+Fold 3 - Train Score (Accuracy): 0.9992, Test Score (Accuracy): 0.9875
+Fold 4 - Train Score (Accuracy): 0.9995, Test Score (Accuracy): 0.9925
+Fold 5 - Train Score (Accuracy): 0.9986, Test Score (Accuracy): 0.9895</code></pre>
+</div>
+</div>
+<p><em>Training the model on the entire dataset provides a final model that has learned from all available data. Recording the training time helps in understanding the computational efficiency and scalability of the model with the given hyperparameters.</em></p>
+</section>
+<section id="validation" class="level3">
+<h3 class="anchored" data-anchor-id="validation">Validation</h3>
+<p><em>Generating test schedules and calculating their objectives and rankings allows us to create a new dataset for evaluating the model’s performance on unseen data.</em></p>
+<p><em>Making predictions on new data and comparing them to the actual rankings provides an evaluation of the model’s performance in practical applications. Recording the prediction time helps in understanding the model’s efficiency during inference.</em></p>
+<p><em>Calculating the ambiguousness of the predicted probabilities helps in understanding the model’s confidence in its predictions. High ambiguousness indicates uncertain predictions, while low ambiguousness indicates confident predictions.</em></p>
+<p><em>Ambiguousness is calculated using the formula for entropy:</em></p>
+<p><span class="math display">\[
+H(X) = - \sum_{i} p(x_i) \log_b p(x_i)
+\]</span></p>
+<p><em>Where in our case:</em></p>
+<ul>
+<li><p><span class="math inline">\(H(X)\)</span> <em>is the ambiguousness of the random variable</em> <span class="math inline">\(X\)</span> <em>- the set of probability scores for the predicted rankings,</em></p></li>
+<li><p><span class="math inline">\(p(x_i)\)</span> <em>is probability score</em> <span class="math inline">\(x_i\)</span><em>,</em></p></li>
+<li><p><span class="math inline">\(\log_b\)</span> <em>is the logarithm with base</em> <span class="math inline">\(b\)</span> <em>(here</em> <span class="math inline">\(\log_2\)</span> <em>as we have two predicted values),</em></p></li>
+<li><p><em>The sum is taken over all possible outcomes of</em> <span class="math inline">\(X\)</span><em>.</em></p></li>
+</ul>
+<p><em>Calculating cumulative error rate and cumulative accuracy helps in understanding how the model’s performance evolves over the dataset.</em></p>
+<p><em>Visualizing the relationship between ambiguousness and error provides insights into how uncertainty in the model’s predictions correlates with its accuracy. This can help in identifying patterns and understanding the conditions under which the model performs well or poorly.</em></p>
+</section>
+<section id="hyperparameter-optimization" class="level3">
+<h3 class="anchored" data-anchor-id="hyperparameter-optimization">Hyperparameter Optimization</h3>
+<p><em>In the initial model the choice of hyperparameters was based on default values, examples from demo’s or trial and error. To improve the model’s performance, we applied a <a href="https://optuna.org/" target="_blank">hyperparameter optimization technique</a> to find the best set of hyperparameters. We used a grid search with cross-validation to find the optimal hyperparameters for the XGBoost model. The grid search was performed over a predefined set of hyperparameters, and the best hyperparameters were selected based on the model’s performance on the validation set. The best hyperparameters were then used to train the final model.</em></p>
+<div id="383e5e3d" class="cell" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create traces</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="results" class="level2">
+<h2 class="anchored" data-anchor-id="results">Results</h2>
+</section>
+<section id="discussion" class="level2">
+<h2 class="anchored" data-anchor-id="discussion">Discussion</h2>
+</section>
+<section id="timeline" class="level2">
+<h2 class="anchored" data-anchor-id="timeline">Timeline</h2>
+<p><em>This experiment was started on 15-10-2024. The expected completion date is 01-11-2024.</em></p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

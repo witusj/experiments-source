@@ -1,0 +1,452 @@
+---
+title: "Large instance XGBoost classification model for pairwise ranking with quasi optimal initial schedule."
+format:
+  html:
+    mathjax: true
+jupyter: python3
+---
+
+## Objective
+
+**Objective**: *Testing the performance of an XGBoost model trained for ranking pairwise schedules.*
+
+## Background
+
+*In this experiment we develop a Machine Learning model using XGBoost that can evaluate two neighboring schedules and rank them according to preference. This ranking model can be applied to quickly guide the search process towards a 'good enough' solution.*
+
+*The choice of using an ordinal model instead of a cardinal model is based on the consideration that it is significantly easier to determine whether alternative A is superior to B than to quantify the exact difference between A and B. This makes intuitive sense when considering the scenario of holding two identical-looking packages and deciding which one is heavier, as opposed to estimating the precise weight difference between them. [@ho_ordinal_2000].*
+
+## Hypothesis
+
+*An XGBoost ranking model achieves superior computational efficiency compared to evaluating each element of a pair individually, leading to faster overall performance in ranking tasks.*
+
+## Methodology
+
+### Tools and Materials
+
+*We use packages from [Scikit-learn](https://scikit-learn.org/stable/index.html) to prepare training data and evaluate the model and the `XGBClassifier` interface from the [XGBoost](https://xgboost.readthedocs.io/en/latest/index.html) library.*
+
+```{python}
+#| label: load-packages
+
+import time
+import math
+import json
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split, cross_val_score, StratifiedKFold, GridSearchCV
+from sklearn.base import clone
+import xgboost as xgb
+from xgboost.callback import TrainingCallback
+import plotly.graph_objects as go
+import pickle
+import random
+from scipy.optimize import minimize
+from itertools import combinations
+```
+
+### Experimental Design
+
+*To compare an XGBoost Machine Learning model with a simple evaluation of each individual element of the pair, we will use a pairwise ranking approach. The objective is to rank two neighboring schedules according to preference.*
+
+```{python}
+from functions import compute_convolutions, get_v_star
+#| label: initialize-parameters
+
+N = 22 # Number of patients
+T = 20 # Number of intervals
+d = 5 # Length of each interval
+max_s = 20 # Maximum service time
+q = 0.20 # Probability of a scheduled patient not showing up
+w = 0.1 # Weight for the waiting time in objective function
+l = 10
+num_schedules = 10000 # Number of schedules to sample
+v_star = get_v_star(T)
+print(f"Size neighnorhood: {2**len(v_star) - 2}, sample size: {num_schedules} = {100*num_schedules / (2**len(v_star) - 2):.2f}% of neighborhood")
+
+# Create service time distribution
+def generate_weighted_list(max_s, l, i):
+    # Initialize an array of T+1 values, starting with zero
+    values = np.zeros(T + 1)
+    
+    # Objective function: Sum of squared differences between current weighted average and the desired l
+    def objective(x):
+        weighted_avg = np.dot(np.arange(1, T + 1), x) / np.sum(x)
+        return (weighted_avg - l) ** 2
+
+    # Constraint: The sum of the values from index 1 to T must be 1
+    constraints = ({
+        'type': 'eq',
+        'fun': lambda x: np.sum(x) - 1
+    })
+    
+    # Bounds: Each value should be between 0 and 1
+    bounds = [(0, 1)] * T
+
+    # Initial guess: Random distribution that sums to 1
+    initial_guess = np.random.dirichlet(np.ones(T))
+
+    # Optimization: Minimize the objective function subject to the sum and bounds constraints
+    result = minimize(objective, initial_guess, method='SLSQP', bounds=bounds, constraints=constraints)
+
+    # Set the values in the array (index 0 remains 0)
+    values[1:] = result.x
+
+    # Now we need to reorder the values as per the new requirement
+    first_part = np.sort(values[1:i+1])  # Sort the first 'i' values in ascending order
+    second_part = np.sort(values[i+1:])[::-1]  # Sort the remaining 'T-i' values in descending order
+    
+    # Combine the sorted parts back together
+    values[1:i+1] = first_part
+    values[i+1:] = second_part
+    
+    return values
+
+i = 5  # First 5 highest values in ascending order, rest in descending order
+s = generate_weighted_list(max_s, l, i)
+print(s)
+print("Sum:", np.sum(s[1:]))  # This should be 1
+print("Weighted service time:", np.dot(np.arange(1, T + 1), s[1:]))  # This should be close to l
+
+convolutions = compute_convolutions(s, N, q)
+file_path_parameters = f"datasets/parameters_{N}_{T}_{l}.pkl"
+with open(file_path_parameters, 'wb') as f:
+    pickle.dump({
+      'N': N,
+      'T': T,
+      'd': d,
+      'max_s': max_s,
+      'q': q,
+      'w': w,
+      'l': l,
+      'num_schedules': num_schedules,
+      'convolutions': convolutions
+      }, f)
+    print(f"Data saved successfully to '{file_path_parameters}'")
+```
+
+*We will create a random set of pairs of neighboring schedules with* $N = `{python} N`$ patients and $T = `{python} T`$ intervals of length $d = `{python} d`$.
+
+*A neighbor of a schedule x is considered a schedule x' where single patients have been shifted one interval to the left. Eg: (\[2,1,1,2\], \[1,2,0,3\]) are neighbors and (\[2,1,1,2\], \[2,1,3,0\]) are not, because \[1,2,0,3\] - \[2,1,1,2\] = \[-1, 1, -1, 1\] and \[2,1,3,0\] - \[2,1,1,2\] = \[0, 0, 2, -2\].*
+
+*Service times will have a discrete distribution. The probability of a scheduled patient not showing up will be* $q = `{python} q`$.
+
+*The objective function will be the weighted average of the total waiting time of all patients and overtime. The model will be trained to predict which of the two neighboring schedules has the lowest objective value. The prediction time will be recorded. Then the same schedules will be evaluated by computing the objective value and then ranked.*
+
+### Variables
+
+-   **Independent Variables**: *A list of tuples with pairs of neighboring schedules.*
+-   **Dependent Variables**: *A list with rankings for each tuple of pairwise schedules. Eg: If the rank for (\[2,1,1\], \[1,1,2\]) equals 0 this means that the schedule with index 0 (\[2,1,1\]) has the lowest objective value.*
+
+### Data Collection
+
+*The data set will be generated using simulation in which random samples will be drawn from the population of all possible schedules. For each sample a random neighboring schedule will be created.*
+
+### Sample Size and Selection
+
+**Sample Size**: *The total population size equals* ${{N + T -1}\choose{N}} \approx$ `{python} round(math.comb(N + T - 1, N) / 1000000,0)` mln. For this experiment we will be using a relatively small sample of `{python} num_schedules` pairs of schedules.
+
+**Sample Selection**: *The samples will be drawn from a lexicographic order of possible schedules in order to accurately reflect the combinatorial nature of the problem and to ensure unbiased sampling from the entire combinatorial space.*
+
+### Experimental Procedure
+
+*The experiment involves multiple steps, beginning with creating an initial quasi optimal schedule and ending with training and testing a model.The diagram below illustrates the sequence of steps.*
+
+```{mermaid}
+
+flowchart TD
+    A[Create a quasi-optimal schedule] -->|"x_hat"| B["Create a sample from the neighborhood of x_hat, H(x_hat)"]
+    B -->|"R ~ H(x^hat)"| C["Calculate the objective value for each schedule r in the sample R and the ranking"]
+    C -->|"F = f(r) for each r in R"| D["Train and test ranking model M using R and f(R)"]
+    D -->|"M"| E["Predict the ranking for pairs of neighboring schedules"]
+```
+
+**Step 1**: *Create a quasi optimal schedule* $\hat{x}$
+
+```{python}
+#| label: create-quasi-optimal-schedule
+
+from functions import build_quasi_optimal_schedule
+
+x_hat = build_quasi_optimal_schedule(N, T)
+print(f"The initial schedule is: {x_hat}")
+
+```
+
+**Step 2**: *Create sample* $R$ of neighboring schedules for $\hat{x}$
+
+```{python}
+#| label: create-neighbors
+
+from functions import create_neighbors_list
+start = time.time()
+R = [create_neighbors_list(x_hat, v_star) for i in range(num_schedules)]
+end = time.time()
+for r in R[:5]: print(f"{r[0]}\n{r[1]}\n{[a - b for a, b in zip(r[0], r[1])]}\n\n")
+training_set_feat_time = end - start
+print(f"\nProcessing time: {training_set_feat_time} seconds\n")
+```
+
+**Step 3**: *For each schedule in each pair calculate the objective. For each pair save the index of the schedule that has the lowest objective value.*
+
+```{python}
+#| label: calculate-objectives
+
+from functions import calculate_objective_serv_time_lookup
+
+# Calculate objective for initial schedule x_hat
+wt_x_hat, ot_x_hat = calculate_objective_serv_time_lookup(x_hat, d, q, convolutions)
+f_x_hat = w * wt_x_hat + (1 - w) * ot_x_hat
+
+# Calculate objectives for neighbors of x_hat
+start = time.time()
+F = [
+    w * result[0] + (1 - w) * result[1]
+    for r in R
+    for result in [calculate_objective_serv_time_lookup(r[1], d, q, convolutions)]
+]
+end = time.time()
+
+training_set_lab_time = end - start
+
+# Rank schedules according to lowest objective
+objectives = [[f_x_hat, f] for f in F]
+rankings = np.argmin(objectives, axis=1).tolist()
+
+for i in range(5):
+  print(f"Objectives: {R[i], objectives[i]}, Ranking: {rankings[i]}")
+  
+superior_schedules = sorted([(r[1], obj[1])  for r, rank, obj in zip(R, rankings, objectives) if rank == 1], key=lambda x: x[1], reverse=True)
+
+print(f"# superior schedules: {sum(rankings)}")
+
+print(f"\nProcessing time: {training_set_lab_time} seconds\n")
+```
+
+**Step 4**: *Create training and test sets.*
+
+```{python}
+#| label: prepare-training-set
+
+# Prepare the dataset
+X = []
+for r in R:
+    X.append(r[0] + r[1])
+
+X = np.array(X)
+y = np.array(rankings)
+
+# Split the dataset into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+```
+
+**Step 5**: *Train the XGBoost model.*
+
+```{mermaid}
+
+flowchart TD
+    A[Start] --> B[Initialize StratifiedKFold]
+    B --> C[Initialize XGBClassifier]
+    C --> D[Set results as empty list]
+    D --> E[Loop through each split of cv split]
+    E --> F[Get train and test indices]
+    F --> G[Split X and y into X_train, X_test, y_train, y_test]
+    G --> H[Clone the classifier]
+    H --> I[Call fit_and_score function]
+    I --> J[Fit the estimator]
+    J --> K[Score on training set]
+    J --> L[Score on test set]
+    K --> M[Return estimator, train_score, test_score]
+    L --> M
+    M --> N[Append the results]
+    N --> E
+    E --> O[Loop ends]
+    O --> P[Print results]
+    P --> Q[End]
+```
+
+
+```{python}
+#| label: hyperparameter-optimization
+#=========================================================================
+# XGBoost regression:
+# Parameters:
+# n_estimators  "Number of gradient boosted trees. Equivalent to number
+#                of boosting rounds."
+# learning_rate "Boosting learning rate (also known as “eta”)"
+# max_depth     "Maximum depth of a tree. Increasing this value will make
+#                the model more complex and more likely to overfit."
+#=========================================================================
+clf=xgb.XGBClassifier()
+
+#=========================================================================
+# exhaustively search for the optimal hyperparameters
+#=========================================================================
+from sklearn.model_selection import GridSearchCV
+# set up our search grid
+param_grid = {"max_depth":    [4, 5, 7],
+              "n_estimators": [500, 700, 900],
+              "learning_rate": [0.05, 0.1, 0.15]}
+
+# try out every combination of the above values
+start = time.time()
+search = GridSearchCV(clf, param_grid, cv=5, verbose=3, n_jobs=-1).fit(X_train, y_train)
+end = time.time()
+hyper_search_time = end - start
+print(f'Hyperparameter optimization time: {hyper_search_time}')
+
+print("The best hyperparameters are ", search.best_params_)
+```
+
+
+```{python}
+#| label: train-model
+
+class CustomCallback(TrainingCallback):
+    def __init__(self, period=10):
+        self.period = period
+
+    def after_iteration(self, model, epoch, evals_log):
+        if (epoch + 1) % self.period == 0:
+            print(f"Epoch {epoch}, Evaluation log: {evals_log['validation_0']['logloss'][epoch]}")
+        return False
+    
+def fit_and_score(estimator, X_train, X_test, y_train, y_test):
+    """Fit the estimator on the train set and score it on both sets"""
+    estimator.fit(X_train, y_train, eval_set=[(X_test, y_test)], verbose=0
+    )
+
+    train_score = estimator.score(X_train, y_train)
+    test_score = estimator.score(X_test, y_test)
+
+    return estimator, train_score, test_score
+
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=94)
+
+clf = xgb.XGBClassifier(
+    tree_method="hist",
+    max_depth=search.best_params_["max_depth"],
+    # min_child_weight=model_params["min_child_weight"],
+    # gamma=model_params["gamma"],
+    # subsample=model_params["subsample"],
+    # colsample_bytree=model_params["colsample_bytree"],
+    learning_rate=search.best_params_["learning_rate"],
+    n_estimators=search.best_params_["n_estimators"],
+    early_stopping_rounds=9,
+    callbacks=[CustomCallback(period=50)],
+)
+
+start = time.time()
+results = []
+
+for train_idx, test_idx in cv.split(X, y):
+    X_train, X_test = X[train_idx], X[test_idx]
+    y_train, y_test = y[train_idx], y[test_idx]
+    est, train_score, test_score = fit_and_score(
+        clone(clf), X_train, X_test, y_train, y_test
+    )
+    results.append((est, train_score, test_score))
+end = time.time()
+training_time = end - start
+print(f"\nTraining time: {training_time} seconds\n")
+```
+
+**Step 6**: *To evaluate the performance of the XGBoost ranking model, we will use Stratified K-Fold Cross-Validation with 5 splits, ensuring each fold maintains the same class distribution as the original dataset. Using StratifiedKFold(n_splits=5, shuffle=True, random_state=94), the dataset will be divided into five folds. In each iteration, the model will be trained on four folds and evaluated on the remaining fold. A custom callback, CustomCallback(period=10), will print the evaluation log every 10 epochs.*
+
+*The fit_and_score function will fit the model and score it on both the training and test sets, storing the results for each fold. This provides insight into the model's performance across different subsets of the data, helps in understanding how well the model generalizes to unseen data and identifies potential overfitting or underfitting issues. The overall processing time for the cross-validation will also be recorded.*
+
+```{python}
+#| label: print-evaluation-results
+
+# Print results
+for i, (est, train_score, test_score) in enumerate(results):
+    print(f"Fold {i+1} - Train Score (Accuracy): {train_score:.4f}, Test Score (Accuracy): {test_score:.4f}")
+```
+
+*Training the model on the entire dataset provides a final model that has learned from all available data. Recording the training time helps in understanding the computational efficiency and scalability of the model with the given hyperparameters.*
+
+```{python}
+
+
+
+```
+
+### Validation
+
+*Generating test schedules and calculating their objectives and rankings allows us to create a new dataset for evaluating the model's performance on unseen data.*
+
+```{python}
+
+```
+
+*Making predictions on new data and comparing them to the actual rankings provides an evaluation of the model's performance in practical applications. Recording the prediction time helps in understanding the model's efficiency during inference.*
+
+```{python}
+
+```
+
+*Calculating the ambiguousness of the predicted probabilities helps in understanding the model's confidence in its predictions. High ambiguousness indicates uncertain predictions, while low ambiguousness indicates confident predictions.*
+
+*Ambiguousness is calculated using the formula for entropy:*
+
+$$
+H(X) = - \sum_{i} p(x_i) \log_b p(x_i)
+$$
+
+*Where in our case:*
+
+-   $H(X)$ *is the ambiguousness of the random variable* $X$ *- the set of probability scores for the predicted rankings,*
+
+-   $p(x_i)$ *is probability score* $x_i$*,*
+
+-   $\log_b$ *is the logarithm with base* $b$ *(here* $\log_2$ *as we have two predicted values),*
+
+-   *The sum is taken over all possible outcomes of* $X$*.*
+
+*Calculating cumulative error rate and cumulative accuracy helps in understanding how the model's performance evolves over the dataset.*
+
+*Visualizing the relationship between ambiguousness and error provides insights into how uncertainty in the model's predictions correlates with its accuracy. This can help in identifying patterns and understanding the conditions under which the model performs well or poorly.*
+
+```{python}
+
+```
+
+### Hyperparameter Optimization
+
+*In the initial model the choice of hyperparameters was based on default values, examples from demo's or trial and error. To improve the model's performance, we applied a [hyperparameter optimization technique](https://optuna.org/){target="_blank"} to find the best set of hyperparameters. We used a grid search with cross-validation to find the optimal hyperparameters for the XGBoost model. The grid search was performed over a predefined set of hyperparameters, and the best hyperparameters were selected based on the model's performance on the validation set. The best hyperparameters were then used to train the final model.*
+
+```{python}
+
+```
+
+```{python}
+
+```
+
+```{python}
+
+```
+
+```{python}
+
+```
+
+```{python}
+
+# Create traces
+
+```
+
+## Results
+
+## Discussion
+
+```{python}
+
+```
+
+## Timeline
+
+*This experiment was started on 15-10-2024. The expected completion date is 01-11-2024.*
+
+## References

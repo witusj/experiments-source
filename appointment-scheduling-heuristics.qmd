@@ -4,6 +4,7 @@ jupyter: python3
 ---
 
 ## Objective
+
 In this experiment, we will test the validity of existing appointment scheduling heuristics by evaluating several instances of scheduling systems and analyzing the results. We will examine the performance of different scheduling strategies and compare them to the heuristics proposed in the literature. The goal is to find quasi optimal schedules that form a good starting point for further optimization using for instance local search algorithms.
 
 ## Background
@@ -14,17 +15,21 @@ The extensive body of research on appointment scheduling offers valuable heurist
 
 !['Dome' shapes of appointment schedules. From Robinson and Chen (2003)[^appointment-scheduling-heuristics-2]](images/robinson-chen-dome-shape.png)
 
-Robinson and Chen (2003)[^appointment-scheduling-heuristics-2] explored the structure of optimal schedules. In their model, the length of intervals could be adjusted to accommodate different job allowances. Their findings include the following general observations:
-
 [^appointment-scheduling-heuristics-2]: Robinson, L. W., & Chen, R. R. (2003). Scheduling doctors' appointments: optimal and empirically-based heuristic policies. IIE Transactions, 35(3), 295-307.
+
+[^appointment-scheduling-heuristics-3]: Robinson, L. W., & Chen, R. R. (2003). Scheduling doctors' appointments: optimal and empirically-based heuristic policies. IIE Transactions, 35(3), 295-307.
+
+Robinson and Chen (2003)[^appointment-scheduling-heuristics-4] explored the structure of optimal schedules. In their model, the length of intervals could be adjusted to accommodate different job allowances. Their findings include the following general observations:
+
+[^appointment-scheduling-heuristics-4]: Robinson, L. W., & Chen, R. R. (2003). Scheduling doctors' appointments: optimal and empirically-based heuristic policies. IIE Transactions, 35(3), 295-307.
 
 -   Job allowances follow a 'dome' pattern, with more time allotted to patients in the middle of the day.
 -   The first job allowance is consistently much lower than the subsequent ones, while the final job allowance is also somewhat lower than the others.
 -   Intermediate job allowances are generally uniform.
 
-Klassen and Yoogalingam (2009)[^appointment-scheduling-heuristics-3] observed a plateau form when appointment intervals are restricted to integers.
+Klassen and Yoogalingam (2009)[^appointment-scheduling-heuristics-5] observed a plateau form when appointment intervals are restricted to integers.
 
-[^appointment-scheduling-heuristics-3]: Klassen, K. J., & Yoogalingam, R. (2009). Improving performance in outpatient appointment services with a simulation optimization approach. Production and Operations Management, 18(4), 447-458.
+[^appointment-scheduling-heuristics-5]: Klassen, K. J., & Yoogalingam, R. (2009). Improving performance in outpatient appointment services with a simulation optimization approach. Production and Operations Management, 18(4), 447-458.
 
 In our model, all interval times are fixed integers, but job allowances can be adjusted by overbooking or underbooking selected service intervals. We examined the extent to which the above rules apply to our model definition.
 
@@ -44,14 +49,14 @@ from plotly.subplots import make_subplots
 from concurrent.futures import ThreadPoolExecutor
 import time
 import math
-from functions import create_random_schedules, calculate_objective, compute_convolutions, local_search, get_v_star, powerset, get_neighborhood, build_welch_bailey_schedule, service_time_with_no_shows, create_schedule_network, create_schedule_network_var_edges, create_schedule_network_from_lists, local_search_w_intermediates
+from functions import create_random_schedules, calculate_objective, compute_convolutions, local_search, get_v_star, powerset, get_neighborhood, build_welch_bailey_schedule, service_time_with_no_shows, create_schedule_network, create_schedule_network_var_edges, create_schedule_network_from_lists, local_search_w_intermediates, build_quasi_optimal_schedule
 ```
 
 ### Experimental Design
 
 We have developed a function that uses the Bailey-Welch rule to create a initial schedule.
 
-```python
+``` python
 def build_welch_bailey_schedule(N, T):
     """
     Build a schedule based on the Welch and Bailey (1952) heuristic.
@@ -93,7 +98,7 @@ We will compare the performance of the Bailey-Welch heuristic with the performan
     -   Different schedule designs with increasingly large instances (lengths and number of patients).
 -   **Dependent Variables**:
     -   Objective function value (weighted sum of average waiting time and physician's overtime) for each schedule.
-    - Computation times
+    -   Computation times
 
 ### Samples
 
@@ -101,14 +106,11 @@ We will generate several schedules with different lengths ($T$), numbers of pati
 
 $$
 N \in \{16, \dots , 22\}
-$$
-$$
+$$ $$
 T \in \{15, \dots , 20\}
-$$
-$$
+$$ $$
 w \in \{0.1, 0,9\}
-$$
-This means that the total solution space varies between `{python} int(math.comb(16+12-1, 16)/1e6)` mln and `{python} int(math.comb(22+20-1, 22)/1e9)` bln schedules. The challenge is to find the optimal schedules within these vast solution spaces.
+$$ This means that the total solution space varies between `{python} int(math.comb(16+12-1, 16)/1e6)` mln and `{python} int(math.comb(22+20-1, 22)/1e9)` bln schedules. The challenge is to find the optimal schedules within these vast solution spaces.
 
 ::: column-page
 ```{python}
@@ -134,7 +136,7 @@ We will evaluate multiple schedules using the Bailey-Welch heuristic and a local
 
 ## Results
 
-We've started with a set of relatively small instances with a fixed number of intervals and varying number of patients. We've run the local search algorithm for each instance and compared the initial and optimized schedules. The blue dotted lines represent the initial schedules generated by the Bailey-Welch heuristic, while the red solid lines represent the optimized schedules obtained through local search.
+We began with a set of relatively small instances, keeping the number of intervals fixed while varying the number of patients. For each instance, we applied the local search algorithm and compared the resulting optimized schedules to the initial ones. The initial schedules, generated using the Bailey-Welch heuristic, are depicted as blue dotted lines, while the optimized schedules obtained through local search are shown as red solid lines.
 
 ```{python}
 from functions import create_random_schedules, calculate_objective, compute_convolutions, local_search, get_v_star, powerset, get_neighborhood, build_welch_bailey_schedule
@@ -219,7 +221,13 @@ for idx, (x_initial, x_star) in enumerate(zip(x_initials, x_stars)):
 # Update layout properties
 fig.update_layout(
     height=600 * num_subplots,  # Adjust height based on the number of subplots
-    title=f"Optimal schedules across different values of N\n(T={T}, w={w})",
+    title=dict(
+        text=f"Optimal schedules across different values of N\n(T={T}, w={w})",
+        x=0.5,  # Center the title horizontally
+        # y=0.95,  # Adjust the vertical position (closer to the top)
+        font=dict(size=20),  # Optional: Adjust title font size
+        pad=dict(b=50)  # Add padding at the top of the title
+    ),
     xaxis_title="Time slot (x)",
     yaxis_title="# of patients (y)",
     template="plotly_white",
@@ -243,12 +251,9 @@ fig.update_layout(legend=dict(
 fig.show()
 ```
 
- we've created . Each node represents an improved schedule. The length of the edges corresponds to the improvement in the objective function value.
+Subsequently we've analyzed the number of steps required for the local search algorithm to transition from the initial schedule to the optimal schedule, as well as the characteristics of the search paths. To accomplish this, we've recorded and visualized the search paths using graph representations for multiple instances starting at the initial schedule and ending at the optimized schedule. Each node in the graph represents an improved schedule. The length of the edges corresponds to the improvement in the objective function value.
 
-Subsequently we've analyzed the number of steps required for the local search algorithm to transition from the initial schedule to the optimal schedule, as well as the characteristics of the search paths. To accomplish this, we recorded and visualized the search paths using graph representations for multiple instances starting at the initial schedule and ending at the optimized schedule. Each node in the graph represents an improved schedule. The length of the edges corresponds to the improvement in the objective function value.
-
-
-::: column-screen
+::: column-page
 ```{python}
 for idx, (n, schedules, objectives) in enumerate(zip(N, schedules_list, objectives_list), start=1):
     print(f'Processing N={n}, number of schedules: {len(schedules)}')
@@ -278,7 +283,7 @@ for idx, (n, schedules, objectives) in enumerate(zip(N, schedules_list, objectiv
 ```
 :::
 
-Finally we've repeated the experiment for similar instances but with a higher weight for the waiting time in the objective function. In this case we also implemented parallel processing to speed up the computation.
+Next we've repeated the experiment for similar instances but with a higher weight for the waiting time in the objective function. In this case we also implemented parallel processing to speed up the computation.
 
 ```{python}
 # Function to process a single N
@@ -303,6 +308,158 @@ s = [0.3, 0.2, 0.1, 0.05, 0.15, 0.2]  # Example service time probability distrib
 d = 2  # Duration threshold
 q = 0.1  # No-show probability
 w = 0.9  # Weight for waiting time in the objective
+v_star = get_v_star(T)
+
+# Lists to store results
+results = []
+
+start = time.time()
+
+# Parallelize the process_schedule function using Joblib
+results = Parallel(n_jobs=-1)(delayed(process_schedule)(n, T, s, d, q, w, v_star) for n in N)
+
+end = time.time()
+
+# Extract results
+x_initials = [result['x_initial'] for result in results]
+schedules_list = [result['schedules'] for result in results]
+objectives_list = [result['objectives'] for result in results]
+x_stars = [result['x_star'] for result in results]
+obj_vals = [result['obj_val'] for result in results]
+
+print("Optimized schedules:", x_stars)
+print("Objective values:", obj_vals)
+print(f"Search time: {end - start:.2f} seconds")
+```
+
+```{python}
+# Number of subplots needed
+num_subplots = len(x_stars)
+
+# Create a subplot figure with one chart per subplot
+fig = sp.make_subplots(
+    rows=num_subplots, 
+    cols=1, 
+    shared_xaxes=True, 
+    subplot_titles=[f'n = {n}' for n in N]
+)
+
+# Add each initial and optimized schedule to its respective subplot
+for idx, (x_initial, x_star) in enumerate(zip(x_initials, x_stars)):
+    # Add initial schedule as a dotted line
+    fig.add_trace(
+        go.Scatter(
+            x=list(range(T)), 
+            y=x_initial, 
+            mode='lines', 
+            name='Initial schedule' if idx == 0 else None,  # Show legend only once
+            line=dict(dash='dot', color='blue')
+        ), 
+        row=idx + 1, 
+        col=1
+    )
+    
+    # Add optimized schedule as a solid line with markers
+    fig.add_trace(
+        go.Scatter(
+            x=list(range(T)), 
+            y=x_star, 
+            mode='lines+markers', 
+            name='Optimized schedule' if idx == 0 else None,  # Show legend only once
+            line=dict(color='red')
+        ), 
+        row=idx + 1, 
+        col=1
+    )
+
+# Update layout properties
+fig.update_layout(
+    height=600 * num_subplots,  # Adjust height based on the number of subplots
+    title=dict(
+        text=f"Optimal schedules across different values of N\n(T={T}, w={w})",
+        x=0.5,  # Center the title horizontally
+        # y=0.95,  # Adjust the vertical position (closer to the top)
+        font=dict(size=20),  # Optional: Adjust title font size
+        pad=dict(b=50)  # Add padding at the top of the title
+    ),
+    xaxis_title="Time slot (x)",
+    yaxis_title="# of patients (y)",
+    template="plotly_white",
+    showlegend=False  # Enable legend to distinguish between initial and optimized schedules
+)
+
+# Set consistent y-axis ticks for each subplot
+for i in range(1, num_subplots + 1):
+    fig.update_yaxes(tickmode='linear', tick0=0, dtick=1, row=i, col=1)
+
+# Optionally, adjust the legend position
+fig.update_layout(legend=dict(
+    orientation="h",
+    yanchor="bottom",
+    y=1.02,
+    xanchor="right",
+    x=1
+))
+
+# Show the Plotly figure
+fig.show()
+```
+
+::: column-page
+```{python}
+for idx, (n, schedules, objectives) in enumerate(zip(N, schedules_list, objectives_list), start=1):
+    print(f'Processing N={n}, number of schedules: {len(schedules)}')
+    
+    # Create individual network graph
+    individual_fig = create_schedule_network_from_lists(
+        schedules=schedules,
+        objective_values=objectives,
+        echo=False
+    )
+    
+    individual_fig.update_layout(
+        autosize=False,
+        width=1500,
+        height=1800,
+        margin=dict(
+            l=50,
+            r=50,
+            b=100,
+            t=100,
+            pad=4
+        )
+    )
+    
+    # Show the individual network graph
+    individual_fig.show()
+```
+:::
+
+Finally we've expanded the experiment to include larger instances. We've increased the number of intervals and patients, while keeping the weight for the waiting time in the objective function at 0.9.
+
+```{python}
+# Function to process a single N
+def process_schedule(n, T, s, d, q, w, v_star):
+    print(f'Running local search for schedule with N={n}')
+    x = build_quasi_optimal_schedule(n, T)
+    convolutions = compute_convolutions(s, n, q)
+    schedules, objectives = local_search_w_intermediates(x, d, q, convolutions, w, v_star, T)
+    return {
+        'n': n,
+        'x_initial': x,
+        'schedules': schedules,
+        'objectives': objectives,
+        'x_star': schedules[-1],
+        'obj_val': objectives[-1],
+    }
+
+# Parameters
+N = range(21, 24)
+T = 20
+s = [0.3, 0.2, 0.1, 0.05, 0.15, 0.2]  # Example service time probability distribution
+d = 2  # Duration threshold
+q = 0.1  # No-show probability
+w = 0.5  # Weight for waiting time in the objective
 v_star = get_v_star(T)
 
 # Lists to store results
@@ -400,7 +557,7 @@ fig.update_layout(legend=dict(
 fig.show()
 ```
 
-::: column-screen
+::: column-page
 ```{python}
 for idx, (n, schedules, objectives) in enumerate(zip(N, schedules_list, objectives_list), start=1):
     print(f'Processing N={n}, number of schedules: {len(schedules)}')
@@ -430,13 +587,13 @@ for idx, (n, schedules, objectives) in enumerate(zip(N, schedules_list, objectiv
 ```
 :::
 
-
-
 ## Discussion
 
 The results of the experiments appear to confirm that optimal schedules adhere to the Bailey-Welch rule of scheduling two patients at the start of the day. The remaining patients are then allocated as evenly as possible across the remaining time intervals. When patients' time is valued higher than the physician's, empty intervals are inserted into the schedule to absorb potential spillover times. This adjustment, however, pushes some patients out of the schedule, thereby increasing the total overtime.
 
-The local search algorithm required on average 22 and 42 steps for both types of instances ($w = 0.1$ and $w = 0.9$, respectively) to compute the global optimum. In each instance, the most significant reductions in the objective value occurred each time a patient was moved from the last time interval to an earlier one. This adjustment minimized overtime, which apparently has a substantial impact on the objective value.
+The local search algorithm required on average 22 and 42 steps for both types of small instances ($w = 0.1$ and $w = 0.9$, respectively) to compute the global optimum. Interestingly the number of steps required to reach the optimal schedule did not increase significantly for the larger instance ($T=20$, $N=\{21, 22\}$, $w = 0.9$), despite the larger solution space. This suggests that the local search algorithm is effective in finding the optimal schedule within a reasonable number of steps.
+
+In each instance, the most significant reductions in the objective value occurred each time a patient was moved from the last time interval to an earlier one. This adjustment minimized overtime, which apparently has a substantial impact on the objective value.
 
 ## Timeline
 
