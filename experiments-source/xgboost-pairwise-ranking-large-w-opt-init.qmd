@@ -265,7 +265,6 @@ flowchart TD
     P --> Q[End]
 ```
 
-
 ```{python}
 #| label: hyperparameter-optimization
 #=========================================================================
@@ -297,7 +296,6 @@ print(f'Hyperparameter optimization time: {hyper_search_time}')
 
 print("The best hyperparameters are ", search.best_params_)
 ```
-
 
 ```{python}
 #| label: train-model

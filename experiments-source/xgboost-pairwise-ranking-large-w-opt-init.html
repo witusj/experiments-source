@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.4.551">
+<meta name="generator" content="quarto-1.5.57">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -33,7 +33,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
   { counter-reset: source-line 0; }
@@ -71,7 +71,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="xgboost-pairwise-ranking-large-w-opt-init_files/libs/quarto-diagram/mermaid-init.js"></script>
 <link href="xgboost-pairwise-ranking-large-w-opt-init_files/libs/quarto-diagram/mermaid.css" rel="stylesheet">
 
-  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
 <script type="text/javascript">
@@ -166,7 +166,7 @@ window.Quarto = {
 <section id="experimental-design" class="level3">
 <h3 class="anchored" data-anchor-id="experimental-design">Experimental Design</h3>
 <p><em>To compare an XGBoost Machine Learning model with a simple evaluation of each individual element of the pair, we will use a pairwise ranking approach. The objective is to rank two neighboring schedules according to preference.</em></p>
-<div id="f91bea57" class="cell" data-execution_count="2">
+<div id="fca025ab" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> functions <span class="im">import</span> compute_convolutions, get_v_star</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: initialize-parameters</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -242,12 +242,12 @@ window.Quarto = {
 <span id="cb2-73"><a href="#cb2-73" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Data saved successfully to '</span><span class="sc">{</span>file_path_parameters<span class="sc">}</span><span class="ss">'"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Size neighnorhood: 1048574, sample size: 10000 = 0.95% of neighborhood
-[0.         0.02348673 0.05237216 0.05910574 0.0890229  0.09752802
- 0.18044074 0.17548084 0.06900127 0.04467913 0.04216347 0.03839354
- 0.03256631 0.02420419 0.02151718 0.01804834 0.00986798 0.00915195
- 0.00505139 0.00408317 0.00383496]
-Sum: 1.0000000001009117
-Weighted service time: 7.094467246882636
+[0.         0.01836799 0.03605715 0.07291267 0.12431277 0.15327871
+ 0.15846656 0.12105847 0.05014545 0.04446311 0.04417971 0.02918453
+ 0.02661495 0.02429585 0.01967511 0.01895182 0.01682577 0.01510671
+ 0.0133477  0.01177417 0.00098077]
+Sum: 1.000000000004607
+Weighted service time: 7.139796391886189
 Data saved successfully to 'datasets/parameters_22_20_10.pkl'</code></pre>
 </div>
 </div>
@@ -312,32 +312,32 @@ Data saved successfully to 'datasets/parameters_22_20_10.pkl'</code></pre>
 <span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Processing time: </span><span class="sc">{</span>training_set_feat_time<span class="sc">}</span><span class="ss"> seconds</span><span class="ch">\n</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6]
-[2, 2, 0, 0, 1, 1, 1, 1, 0, 2, 1, 0, 1, 0, 2, 1, 0, 1, 0, 6]
-[0, -1, 1, 0, 0, 0, 0, 0, 0, -1, 0, 1, 0, 0, -1, 0, 1, 0, 0, 0]
+[2, 2, 0, 1, 0, 1, 1, 1, 0, 2, 0, 2, 0, 1, 1, 0, 2, 0, 0, 6]
+[0, -1, 1, -1, 1, 0, 0, 0, 0, -1, 1, -1, 1, -1, 0, 1, -1, 1, 0, 0]
 
 
 [2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6]
-[1, 2, 0, 1, 0, 1, 2, 0, 0, 1, 1, 2, 0, 1, 1, 1, 1, 0, 1, 6]
-[1, -1, 1, -1, 1, 0, -1, 1, 0, 0, 0, -1, 1, -1, 0, 0, 0, 1, -1, 0]
+[3, 1, 0, 0, 1, 2, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 6]
+[-1, 0, 1, 0, 0, -1, 0, 1, -1, 0, 1, 0, 0, -1, 0, 0, 1, 0, 0, 0]
 
 
 [2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6]
-[2, 0, 1, 1, 1, 1, 0, 1, 0, 2, 1, 0, 1, 1, 0, 2, 1, 0, 0, 7]
-[0, 1, 0, -1, 0, 0, 1, 0, 0, -1, 0, 1, 0, -1, 1, -1, 0, 1, 0, -1]
+[2, 1, 2, 0, 1, 0, 2, 0, 1, 0, 2, 0, 1, 0, 1, 2, 1, 0, 1, 5]
+[0, 0, -1, 0, 0, 1, -1, 1, -1, 1, -1, 1, 0, 0, 0, -1, 0, 1, -1, 1]
 
 
 [2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6]
-[2, 1, 1, 0, 1, 0, 2, 0, 1, 0, 2, 1, 0, 0, 1, 1, 1, 1, 0, 7]
-[0, 0, 0, 0, 0, 1, -1, 1, -1, 1, -1, 0, 1, 0, 0, 0, 0, 0, 0, -1]
+[2, 2, 0, 1, 1, 1, 0, 1, 0, 2, 1, 1, 0, 1, 1, 0, 1, 1, 1, 5]
+[0, -1, 1, -1, 0, 0, 1, 0, 0, -1, 0, 0, 1, -1, 0, 1, 0, 0, -1, 1]
 
 
 [2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6]
-[3, 0, 1, 1, 1, 0, 2, 1, 0, 1, 1, 0, 1, 0, 2, 1, 1, 0, 0, 6]
-[-1, 1, 0, -1, 0, 1, -1, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 1, 0, 0]
+[2, 2, 0, 1, 1, 1, 0, 1, 0, 2, 0, 1, 2, 0, 0, 1, 1, 1, 1, 5]
+[0, -1, 1, -1, 0, 0, 1, 0, 0, -1, 1, 0, -1, 0, 1, 0, 0, 0, -1, 1]
 
 
 
-Processing time: 1.0238380432128906 seconds
+Processing time: 0.3398551940917969 seconds
 </code></pre>
 </div>
 </div>
@@ -366,19 +366,21 @@ Processing time: 1.0238380432128906 seconds
 <span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">5</span>):</span>
 <span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>  <span class="bu">print</span>(<span class="ss">f"Objectives: </span><span class="sc">{</span>R[i]<span class="sc">,</span> objectives[i]<span class="sc">}</span><span class="ss">, Ranking: </span><span class="sc">{</span>rankings[i]<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"# superior schedules: </span><span class="sc">{</span><span class="bu">sum</span>(rankings)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>superior_schedules <span class="op">=</span> <span class="bu">sorted</span>([(r[<span class="dv">1</span>], obj[<span class="dv">1</span>])  <span class="cf">for</span> r, rank, obj <span class="kw">in</span> <span class="bu">zip</span>(R, rankings, objectives) <span class="cf">if</span> rank <span class="op">==</span> <span class="dv">1</span>], key<span class="op">=</span><span class="kw">lambda</span> x: x[<span class="dv">1</span>], reverse<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Processing time: </span><span class="sc">{</span>training_set_lab_time<span class="sc">}</span><span class="ss"> seconds</span><span class="ch">\n</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"# superior schedules: </span><span class="sc">{</span><span class="bu">sum</span>(rankings)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Processing time: </span><span class="sc">{</span>training_set_lab_time<span class="sc">}</span><span class="ss"> seconds</span><span class="ch">\n</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Objectives: (([2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6], [2, 2, 0, 0, 1, 1, 1, 1, 0, 2, 1, 0, 1, 0, 2, 1, 0, 1, 0, 6]), [57.007246486621625, 58.49792979805997]), Ranking: 0
-Objectives: (([2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6], [1, 2, 0, 1, 0, 1, 2, 0, 0, 1, 1, 2, 0, 1, 1, 1, 1, 0, 1, 6]), [57.007246486621625, 59.908309920923344]), Ranking: 0
-Objectives: (([2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6], [2, 0, 1, 1, 1, 1, 0, 1, 0, 2, 1, 0, 1, 1, 0, 2, 1, 0, 0, 7]), [57.007246486621625, 61.20994881225388]), Ranking: 0
-Objectives: (([2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6], [2, 1, 1, 0, 1, 0, 2, 0, 1, 0, 2, 1, 0, 0, 1, 1, 1, 1, 0, 7]), [57.007246486621625, 61.27888491809883]), Ranking: 0
-Objectives: (([2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6], [3, 0, 1, 1, 1, 0, 2, 1, 0, 1, 1, 0, 1, 0, 2, 1, 1, 0, 0, 6]), [57.007246486621625, 59.071816663785185]), Ranking: 0
-# superior schedules: 320
+<pre><code>Objectives: (([2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6], [2, 2, 0, 1, 0, 1, 1, 1, 0, 2, 0, 2, 0, 1, 1, 0, 2, 0, 0, 6]), [np.float64(59.19490272478582), np.float64(60.586390325695206)]), Ranking: 0
+Objectives: (([2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6], [3, 1, 0, 0, 1, 2, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 6]), [np.float64(59.19490272478582), np.float64(60.732441835903245)]), Ranking: 0
+Objectives: (([2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6], [2, 1, 2, 0, 1, 0, 2, 0, 1, 0, 2, 0, 1, 0, 1, 2, 1, 0, 1, 5]), [np.float64(59.19490272478582), np.float64(59.81030214900616)]), Ranking: 0
+Objectives: (([2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6], [2, 2, 0, 1, 1, 1, 0, 1, 0, 2, 1, 1, 0, 1, 1, 0, 1, 1, 1, 5]), [np.float64(59.19490272478582), np.float64(59.37530688280059)]), Ranking: 0
+Objectives: (([2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6], [2, 2, 0, 1, 1, 1, 0, 1, 0, 2, 0, 1, 2, 0, 0, 1, 1, 1, 1, 5]), [np.float64(59.19490272478582), np.float64(59.471568014894274)]), Ranking: 0
+# superior schedules: 381
 
-Processing time: 10.029011011123657 seconds
+Processing time: 3.8910510540008545 seconds
 </code></pre>
 </div>
 </div>
@@ -457,8 +459,8 @@ Processing time: 10.029011011123657 seconds
 <span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"The best hyperparameters are "</span>, search.best_params_)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Fitting 5 folds for each of 27 candidates, totalling 135 fits
-Hyperparameter optimization time: 17.897692918777466
-The best hyperparameters are  {'learning_rate': 0.15, 'max_depth': 4, 'n_estimators': 500}</code></pre>
+Hyperparameter optimization time: 12.320099830627441
+The best hyperparameters are  {'learning_rate': 0.15, 'max_depth': 4, 'n_estimators': 700}</code></pre>
 </div>
 </div>
 <div id="train-model" class="cell" data-execution_count="8">
@@ -510,26 +512,35 @@ The best hyperparameters are  {'learning_rate': 0.15, 'max_depth': 4, 'n_estimat
 <span id="cb13-46"><a href="#cb13-46" aria-hidden="true" tabindex="-1"></a>training_time <span class="op">=</span> end <span class="op">-</span> start</span>
 <span id="cb13-47"><a href="#cb13-47" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Training time: </span><span class="sc">{</span>training_time<span class="sc">}</span><span class="ss"> seconds</span><span class="ch">\n</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Epoch 49, Evaluation log: 0.04242680395623392
-Epoch 99, Evaluation log: 0.03206626233276341
-Epoch 149, Evaluation log: 0.02779624804034967
-Epoch 199, Evaluation log: 0.02623039299065744
-Epoch 49, Evaluation log: 0.04294085491019359
-Epoch 99, Evaluation log: 0.03344695683992824
-Epoch 149, Evaluation log: 0.02967281087182599
-Epoch 49, Evaluation log: 0.04590032686605992
-Epoch 99, Evaluation log: 0.03537562738171141
-Epoch 149, Evaluation log: 0.0315119342279017
-Epoch 199, Evaluation log: 0.02918998630769415
-Epoch 49, Evaluation log: 0.03735242380765703
-Epoch 99, Evaluation log: 0.02736905137527401
-Epoch 149, Evaluation log: 0.02399353369658394
-Epoch 199, Evaluation log: 0.0224890911438431
-Epoch 49, Evaluation log: 0.0394593557855842
-Epoch 99, Evaluation log: 0.03226582261655176
-Epoch 149, Evaluation log: 0.02989994596646494
+<pre><code>Epoch 49, Evaluation log: 0.04581042135335156
+Epoch 99, Evaluation log: 0.03420875136625363
+Epoch 149, Evaluation log: 0.02942244126943495
+Epoch 199, Evaluation log: 0.02735426407613644
+Epoch 249, Evaluation log: 0.02578282390645948
+Epoch 299, Evaluation log: 0.02444220604983637
+Epoch 349, Evaluation log: 0.02357606326203142
+Epoch 49, Evaluation log: 0.04742154595765169
+Epoch 99, Evaluation log: 0.03767469604865119
+Epoch 149, Evaluation log: 0.03380781267481752
+Epoch 199, Evaluation log: 0.03220495617252137
+Epoch 249, Evaluation log: 0.03160901568147737
+Epoch 49, Evaluation log: 0.04533677141095541
+Epoch 99, Evaluation log: 0.03461645934341527
+Epoch 149, Evaluation log: 0.03091500491339803
+Epoch 199, Evaluation log: 0.02840133551299424
+Epoch 49, Evaluation log: 0.05111906089170225
+Epoch 99, Evaluation log: 0.03889909651915269
+Epoch 149, Evaluation log: 0.03463513852901725
+Epoch 199, Evaluation log: 0.03248316936034373
+Epoch 249, Evaluation log: 0.03124524492715395
+Epoch 49, Evaluation log: 0.04857952462540561
+Epoch 99, Evaluation log: 0.03767202197064898
+Epoch 149, Evaluation log: 0.03281562552401865
+Epoch 199, Evaluation log: 0.03001423946635234
+Epoch 249, Evaluation log: 0.02814692470894959
+Epoch 299, Evaluation log: 0.02693218562664656
 
-Training time: 1.3156979084014893 seconds
+Training time: 1.767186164855957 seconds
 </code></pre>
 </div>
 </div>
@@ -540,11 +551,11 @@ Training time: 1.3156979084014893 seconds
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, (est, train_score, test_score) <span class="kw">in</span> <span class="bu">enumerate</span>(results):</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Fold </span><span class="sc">{</span>i<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss"> - Train Score (Accuracy): </span><span class="sc">{</span>train_score<span class="sc">:.4f}</span><span class="ss">, Test Score (Accuracy): </span><span class="sc">{</span>test_score<span class="sc">:.4f}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Fold 1 - Train Score (Accuracy): 0.9992, Test Score (Accuracy): 0.9905
-Fold 2 - Train Score (Accuracy): 0.9996, Test Score (Accuracy): 0.9875
-Fold 3 - Train Score (Accuracy): 0.9992, Test Score (Accuracy): 0.9875
-Fold 4 - Train Score (Accuracy): 0.9995, Test Score (Accuracy): 0.9925
-Fold 5 - Train Score (Accuracy): 0.9986, Test Score (Accuracy): 0.9895</code></pre>
+<pre><code>Fold 1 - Train Score (Accuracy): 0.9999, Test Score (Accuracy): 0.9895
+Fold 2 - Train Score (Accuracy): 0.9994, Test Score (Accuracy): 0.9860
+Fold 3 - Train Score (Accuracy): 0.9992, Test Score (Accuracy): 0.9885
+Fold 4 - Train Score (Accuracy): 0.9998, Test Score (Accuracy): 0.9870
+Fold 5 - Train Score (Accuracy): 0.9998, Test Score (Accuracy): 0.9875</code></pre>
 </div>
 </div>
 <p><em>Training the model on the entire dataset provides a final model that has learned from all available data. Recording the training time helps in understanding the computational efficiency and scalability of the model with the given hyperparameters.</em></p>
@@ -571,7 +582,7 @@ H(X) = - \sum_{i} p(x_i) \log_b p(x_i)
 <section id="hyperparameter-optimization" class="level3">
 <h3 class="anchored" data-anchor-id="hyperparameter-optimization">Hyperparameter Optimization</h3>
 <p><em>In the initial model the choice of hyperparameters was based on default values, examples from demo’s or trial and error. To improve the model’s performance, we applied a <a href="https://optuna.org/" target="_blank">hyperparameter optimization technique</a> to find the best set of hyperparameters. We used a grid search with cross-validation to find the optimal hyperparameters for the XGBoost model. The grid search was performed over a predefined set of hyperparameters, and the best hyperparameters were selected based on the model’s performance on the validation set. The best hyperparameters were then used to train the final model.</em></p>
-<div id="383e5e3d" class="cell" data-execution_count="10">
+<div id="5a2dbf70" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create traces</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
@@ -627,18 +638,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }
     return false;
   }
-  const clipboard = new window.ClipboardJS('.code-copy-button', {
-    text: function(trigger) {
-      const codeEl = trigger.previousElementSibling.cloneNode(true);
-      for (const childEl of codeEl.children) {
-        if (isCodeAnnotation(childEl)) {
-          childEl.remove();
-        }
-      }
-      return codeEl.innerText;
-    }
-  });
-  clipboard.on('success', function(e) {
+  const onCopySuccess = function(e) {
     // button target
     const button = e.trigger;
     // don't keep focus
@@ -670,7 +670,29 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }, 1000);
     // clear code selection
     e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
   });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
     var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
     var mailtoRegex = new RegExp(/^mailto:/);
       var filterRegex = new RegExp('/' + window.location.host + '/');
@@ -678,7 +700,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
         return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
     }
     // Inspect non-navigation links and adorn them if external
- 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
     for (var i=0; i<links.length; i++) {
       const link = links[i];
       if (!isInternal(link.href)) {
