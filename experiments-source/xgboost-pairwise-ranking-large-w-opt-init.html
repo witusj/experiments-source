@@ -166,7 +166,7 @@ window.Quarto = {
 <section id="experimental-design" class="level3">
 <h3 class="anchored" data-anchor-id="experimental-design">Experimental Design</h3>
 <p><em>To compare an XGBoost Machine Learning model with a simple evaluation of each individual element of the pair, we will use a pairwise ranking approach. The objective is to rank two neighboring schedules according to preference.</em></p>
-<div id="fca025ab" class="cell" data-execution_count="2">
+<div id="cfaf9f1b" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> functions <span class="im">import</span> compute_convolutions, get_v_star</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: initialize-parameters</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -242,12 +242,12 @@ window.Quarto = {
 <span id="cb2-73"><a href="#cb2-73" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Data saved successfully to '</span><span class="sc">{</span>file_path_parameters<span class="sc">}</span><span class="ss">'"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Size neighnorhood: 1048574, sample size: 10000 = 0.95% of neighborhood
-[0.         0.01836799 0.03605715 0.07291267 0.12431277 0.15327871
- 0.15846656 0.12105847 0.05014545 0.04446311 0.04417971 0.02918453
- 0.02661495 0.02429585 0.01967511 0.01895182 0.01682577 0.01510671
- 0.0133477  0.01177417 0.00098077]
-Sum: 1.000000000004607
-Weighted service time: 7.139796391886189
+[0.         0.01809273 0.03081788 0.04992515 0.10436931 0.16345823
+ 0.14309845 0.14129139 0.07743256 0.05667513 0.03582921 0.03391331
+ 0.03136326 0.02544553 0.02478656 0.02089183 0.01446352 0.01236578
+ 0.01113018 0.00304712 0.00160288]
+Sum: 1.0000000000251246
+Weighted service time: 7.2722488617999765
 Data saved successfully to 'datasets/parameters_22_20_10.pkl'</code></pre>
 </div>
 </div>
@@ -312,32 +312,32 @@ Data saved successfully to 'datasets/parameters_22_20_10.pkl'</code></pre>
 <span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Processing time: </span><span class="sc">{</span>training_set_feat_time<span class="sc">}</span><span class="ss"> seconds</span><span class="ch">\n</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6]
-[2, 2, 0, 1, 0, 1, 1, 1, 0, 2, 0, 2, 0, 1, 1, 0, 2, 0, 0, 6]
-[0, -1, 1, -1, 1, 0, 0, 0, 0, -1, 1, -1, 1, -1, 0, 1, -1, 1, 0, 0]
+[2, 0, 1, 0, 2, 1, 1, 0, 0, 1, 2, 1, 0, 1, 1, 0, 1, 1, 1, 6]
+[0, 1, 0, 0, -1, 0, 0, 1, 0, 0, -1, 0, 1, -1, 0, 1, 0, 0, -1, 0]
 
 
 [2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6]
-[3, 1, 0, 0, 1, 2, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 6]
-[-1, 0, 1, 0, 0, -1, 0, 1, -1, 0, 1, 0, 0, -1, 0, 0, 1, 0, 0, 0]
+[2, 1, 1, 1, 0, 2, 1, 1, 0, 0, 1, 2, 0, 1, 1, 1, 1, 0, 1, 5]
+[0, 0, 0, -1, 1, -1, 0, 0, 0, 1, 0, -1, 1, -1, 0, 0, 0, 1, -1, 1]
 
 
 [2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6]
-[2, 1, 2, 0, 1, 0, 2, 0, 1, 0, 2, 0, 1, 0, 1, 2, 1, 0, 1, 5]
-[0, 0, -1, 0, 0, 1, -1, 1, -1, 1, -1, 1, 0, 0, 0, -1, 0, 1, -1, 1]
+[2, 1, 1, 0, 0, 2, 0, 1, 0, 2, 1, 1, 0, 0, 1, 1, 1, 2, 0, 6]
+[0, 0, 0, 0, 1, -1, 1, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0]
 
 
 [2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6]
-[2, 2, 0, 1, 1, 1, 0, 1, 0, 2, 1, 1, 0, 1, 1, 0, 1, 1, 1, 5]
-[0, -1, 1, -1, 0, 0, 1, 0, 0, -1, 0, 0, 1, -1, 0, 1, 0, 0, -1, 1]
+[3, 0, 1, 0, 2, 0, 2, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 5]
+[-1, 1, 0, 0, -1, 1, -1, 1, -1, 0, 0, 0, 1, 0, 0, 0, 0, 0, -1, 1]
 
 
 [2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6]
-[2, 2, 0, 1, 1, 1, 0, 1, 0, 2, 0, 1, 2, 0, 0, 1, 1, 1, 1, 5]
-[0, -1, 1, -1, 0, 0, 1, 0, 0, -1, 1, 0, -1, 0, 1, 0, 0, 0, -1, 1]
+[3, 0, 1, 1, 1, 1, 0, 1, 0, 1, 2, 0, 1, 1, 0, 1, 1, 1, 0, 6]
+[-1, 1, 0, -1, 0, 0, 1, 0, 0, 0, -1, 1, 0, -1, 1, 0, 0, 0, 0, 0]
 
 
 
-Processing time: 0.3398551940917969 seconds
+Processing time: 0.34946107864379883 seconds
 </code></pre>
 </div>
 </div>
@@ -373,14 +373,14 @@ Processing time: 0.3398551940917969 seconds
 <span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Processing time: </span><span class="sc">{</span>training_set_lab_time<span class="sc">}</span><span class="ss"> seconds</span><span class="ch">\n</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Objectives: (([2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6], [2, 2, 0, 1, 0, 1, 1, 1, 0, 2, 0, 2, 0, 1, 1, 0, 2, 0, 0, 6]), [np.float64(59.19490272478582), np.float64(60.586390325695206)]), Ranking: 0
-Objectives: (([2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6], [3, 1, 0, 0, 1, 2, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 6]), [np.float64(59.19490272478582), np.float64(60.732441835903245)]), Ranking: 0
-Objectives: (([2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6], [2, 1, 2, 0, 1, 0, 2, 0, 1, 0, 2, 0, 1, 0, 1, 2, 1, 0, 1, 5]), [np.float64(59.19490272478582), np.float64(59.81030214900616)]), Ranking: 0
-Objectives: (([2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6], [2, 2, 0, 1, 1, 1, 0, 1, 0, 2, 1, 1, 0, 1, 1, 0, 1, 1, 1, 5]), [np.float64(59.19490272478582), np.float64(59.37530688280059)]), Ranking: 0
-Objectives: (([2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6], [2, 2, 0, 1, 1, 1, 0, 1, 0, 2, 0, 1, 2, 0, 0, 1, 1, 1, 1, 5]), [np.float64(59.19490272478582), np.float64(59.471568014894274)]), Ranking: 0
-# superior schedules: 381
+<pre><code>Objectives: (([2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6], [2, 0, 1, 0, 2, 1, 1, 0, 0, 1, 2, 1, 0, 1, 1, 0, 1, 1, 1, 6]), [np.float64(60.8396636553857), np.float64(64.42411044708763)]), Ranking: 0
+Objectives: (([2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6], [2, 1, 1, 1, 0, 2, 1, 1, 0, 0, 1, 2, 0, 1, 1, 1, 1, 0, 1, 5]), [np.float64(60.8396636553857), np.float64(61.29879395779801)]), Ranking: 0
+Objectives: (([2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6], [2, 1, 1, 0, 0, 2, 0, 1, 0, 2, 1, 1, 0, 0, 1, 1, 1, 2, 0, 6]), [np.float64(60.8396636553857), np.float64(64.72288467054707)]), Ranking: 0
+Objectives: (([2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6], [3, 0, 1, 0, 2, 0, 2, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 5]), [np.float64(60.8396636553857), np.float64(61.69470726176583)]), Ranking: 0
+Objectives: (([2, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 6], [3, 0, 1, 1, 1, 1, 0, 1, 0, 1, 2, 0, 1, 1, 0, 1, 1, 1, 0, 6]), [np.float64(60.8396636553857), np.float64(61.8615721536005)]), Ranking: 0
+# superior schedules: 137
 
-Processing time: 3.8910510540008545 seconds
+Processing time: 3.8822808265686035 seconds
 </code></pre>
 </div>
 </div>
@@ -459,8 +459,8 @@ Processing time: 3.8910510540008545 seconds
 <span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"The best hyperparameters are "</span>, search.best_params_)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Fitting 5 folds for each of 27 candidates, totalling 135 fits
-Hyperparameter optimization time: 12.320099830627441
-The best hyperparameters are  {'learning_rate': 0.15, 'max_depth': 4, 'n_estimators': 700}</code></pre>
+Hyperparameter optimization time: 8.61372423171997
+The best hyperparameters are  {'learning_rate': 0.1, 'max_depth': 5, 'n_estimators': 500}</code></pre>
 </div>
 </div>
 <div id="train-model" class="cell" data-execution_count="8">
@@ -512,35 +512,25 @@ The best hyperparameters are  {'learning_rate': 0.15, 'max_depth': 4, 'n_estimat
 <span id="cb13-46"><a href="#cb13-46" aria-hidden="true" tabindex="-1"></a>training_time <span class="op">=</span> end <span class="op">-</span> start</span>
 <span id="cb13-47"><a href="#cb13-47" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="ch">\n</span><span class="ss">Training time: </span><span class="sc">{</span>training_time<span class="sc">}</span><span class="ss"> seconds</span><span class="ch">\n</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Epoch 49, Evaluation log: 0.04581042135335156
-Epoch 99, Evaluation log: 0.03420875136625363
-Epoch 149, Evaluation log: 0.02942244126943495
-Epoch 199, Evaluation log: 0.02735426407613644
-Epoch 249, Evaluation log: 0.02578282390645948
-Epoch 299, Evaluation log: 0.02444220604983637
-Epoch 349, Evaluation log: 0.02357606326203142
-Epoch 49, Evaluation log: 0.04742154595765169
-Epoch 99, Evaluation log: 0.03767469604865119
-Epoch 149, Evaluation log: 0.03380781267481752
-Epoch 199, Evaluation log: 0.03220495617252137
-Epoch 249, Evaluation log: 0.03160901568147737
-Epoch 49, Evaluation log: 0.04533677141095541
-Epoch 99, Evaluation log: 0.03461645934341527
-Epoch 149, Evaluation log: 0.03091500491339803
-Epoch 199, Evaluation log: 0.02840133551299424
-Epoch 49, Evaluation log: 0.05111906089170225
-Epoch 99, Evaluation log: 0.03889909651915269
-Epoch 149, Evaluation log: 0.03463513852901725
-Epoch 199, Evaluation log: 0.03248316936034373
-Epoch 249, Evaluation log: 0.03124524492715395
-Epoch 49, Evaluation log: 0.04857952462540561
-Epoch 99, Evaluation log: 0.03767202197064898
-Epoch 149, Evaluation log: 0.03281562552401865
-Epoch 199, Evaluation log: 0.03001423946635234
-Epoch 249, Evaluation log: 0.02814692470894959
-Epoch 299, Evaluation log: 0.02693218562664656
+<pre><code>Epoch 49, Evaluation log: 0.02668431445851456
+Epoch 99, Evaluation log: 0.02079677589071434
+Epoch 149, Evaluation log: 0.01882647543491748
+Epoch 199, Evaluation log: 0.01783549466071429
+Epoch 249, Evaluation log: 0.01689850171303166
+Epoch 299, Evaluation log: 0.01639253014049582
+Epoch 49, Evaluation log: 0.0238837953429902
+Epoch 99, Evaluation log: 0.01900961393730358
+Epoch 149, Evaluation log: 0.01806094553619698
+Epoch 49, Evaluation log: 0.02630572054476943
+Epoch 99, Evaluation log: 0.02249349442150196
+Epoch 49, Evaluation log: 0.02419850866514025
+Epoch 99, Evaluation log: 0.01973578802901466
+Epoch 149, Evaluation log: 0.01862731682008996
+Epoch 49, Evaluation log: 0.02731396364123793
+Epoch 99, Evaluation log: 0.02209504968185138
+Epoch 149, Evaluation log: 0.01985021703854227
 
-Training time: 1.767186164855957 seconds
+Training time: 1.2815587520599365 seconds
 </code></pre>
 </div>
 </div>
@@ -551,11 +541,11 @@ Training time: 1.767186164855957 seconds
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, (est, train_score, test_score) <span class="kw">in</span> <span class="bu">enumerate</span>(results):</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Fold </span><span class="sc">{</span>i<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss"> - Train Score (Accuracy): </span><span class="sc">{</span>train_score<span class="sc">:.4f}</span><span class="ss">, Test Score (Accuracy): </span><span class="sc">{</span>test_score<span class="sc">:.4f}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Fold 1 - Train Score (Accuracy): 0.9999, Test Score (Accuracy): 0.9895
-Fold 2 - Train Score (Accuracy): 0.9994, Test Score (Accuracy): 0.9860
-Fold 3 - Train Score (Accuracy): 0.9992, Test Score (Accuracy): 0.9885
-Fold 4 - Train Score (Accuracy): 0.9998, Test Score (Accuracy): 0.9870
-Fold 5 - Train Score (Accuracy): 0.9998, Test Score (Accuracy): 0.9875</code></pre>
+<pre><code>Fold 1 - Train Score (Accuracy): 1.0000, Test Score (Accuracy): 0.9925
+Fold 2 - Train Score (Accuracy): 0.9999, Test Score (Accuracy): 0.9910
+Fold 3 - Train Score (Accuracy): 0.9994, Test Score (Accuracy): 0.9925
+Fold 4 - Train Score (Accuracy): 0.9999, Test Score (Accuracy): 0.9930
+Fold 5 - Train Score (Accuracy): 0.9996, Test Score (Accuracy): 0.9910</code></pre>
 </div>
 </div>
 <p><em>Training the model on the entire dataset provides a final model that has learned from all available data. Recording the training time helps in understanding the computational efficiency and scalability of the model with the given hyperparameters.</em></p>
@@ -582,7 +572,7 @@ H(X) = - \sum_{i} p(x_i) \log_b p(x_i)
 <section id="hyperparameter-optimization" class="level3">
 <h3 class="anchored" data-anchor-id="hyperparameter-optimization">Hyperparameter Optimization</h3>
 <p><em>In the initial model the choice of hyperparameters was based on default values, examples from demo’s or trial and error. To improve the model’s performance, we applied a <a href="https://optuna.org/" target="_blank">hyperparameter optimization technique</a> to find the best set of hyperparameters. We used a grid search with cross-validation to find the optimal hyperparameters for the XGBoost model. The grid search was performed over a predefined set of hyperparameters, and the best hyperparameters were selected based on the model’s performance on the validation set. The best hyperparameters were then used to train the final model.</em></p>
-<div id="5a2dbf70" class="cell" data-execution_count="10">
+<div id="30d60f89" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create traces</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
