@@ -4,24 +4,67 @@ jupyter: python3
 ---
 
 ```{python}
+#| colab: {base_uri: 'https://localhost:8080/'}
+#| executionInfo: {status: ok, timestamp: 1732013158828, user_tz: 0, elapsed: 533, user: {displayName: W ten Ho, userId: '14777481866548251017'}}
+#| ExecuteTime: {end_time: '2024-12-05T12:15:20.592762Z', start_time: '2024-12-05T12:15:20.432912Z'}
 import numpy as np
 import time
 from typing import List, Generator, Tuple
 
 def service_time_with_no_shows(s: List[float], q: float) -> List[float]:
+    """
+    Adjust a distribution of service times for no-shows.
 
-    s_adj = [(1 - q) * si for si in s]
-    s_adj[0] += q
+    The adjusted service time distribution accounts for the probability q of no-shows.
+
+    Parameters:
+    s (List[float]): The original service time probability distribution.
+    q (float): The no-show probability.
+
+    Returns:
+    List[float]: The adjusted service time distribution.
+    """
+    # Adjust the service times by multiplying with (1 - q)
+    s_adj = [(1 - q) * float(si) for si in s]  # JB: why the float conversion?
+    # Add the no-show probability to the zero service time  # JB: In the paper you say, you start with index 1, no?
+    s_adj[0] = s_adj[0] + q  # JB: s_adj[0] += q
     return s_adj
 
-def compute_convolutions(probabilities, N, q=0.0):
-   
+def compute_convolutions(probabilities, N, q=0.0):  # JB: I think hint typing everywhere is a good practice
+    """
+    Computes the k-fold convolution of a probability mass function for k in range 1 to N.  # JB: Introduce PMF here.
+
+    Parameters:
+    probabilities (list of floats): The PMF represented as a list where the index is the service time and the value is the probability. JB: Note that this function is generic and does not have to be used for service times only.
+    N (int): The maximum number of convolutions to compute.
+
+    Returns:
+    dict: A dictionary where keys are k and values are the convoluted service times (PMFs).
+    """
+    convolutions = {}
+    result = probabilities.copy()  # JB: I do not think it is necessary to copy probabilities: service_time_with_no_show() does not change it inplace.
+    result = service_time_with_no_shows(result, q)  # is result a meaningful name?
+    for k in range(1, N + 1):
+        if k == 1:
+            convolutions[k] = result
+        else:
+            result = np.convolve(result, probabilities)  # JB: shouldn't you work with service_time_with_no_shows(probabilities, q) instead of probabilities? 
+            convolutions[k] = result
+    """
+    JB: I think starting from line 35, something like this is easier (asumming you have to work with probabilities, although I doubt that):
+    
     convolutions = {1: service_time_with_no_shows(probabilities, q)}
     for k in range(2, N + 1):
         convolutions[k] = np.convolve(convolutions[k - 1], probabilities)
     return convolutions
+    
+    Furthermore, ChatGPT hinted on the following: "For large N, consider using algorithms designed for efficient repeated convolutions (e.g., FFT-based methods)." I do not think these convolutions are the bottleneck per se, but it is something to keep in mind.    
+    """
+    return convolutions
 
-def test_compute_convolutions():  
+def test_compute_convolutions():  # JB: Good that you include tests! Test it also for (small) examples for which you know the convolution result, either found on internet, hand-computed, or (trivial) edge cases.
+    # Define a sample probability mass function
+    # probabilities = [0.1, 0.2, 0.3, 0.4]  # Service times 0, 1, 2, 3
     probabilities = [0., 0.00599585, 0.00644478, 0.02427306, 0.04753406, 0.07355202, 0.16864656, 0.12338866, 0.10182152, 0.09778246, 0.07283463, 0.05794873, 0.05378825, 0.04945164, 0.04805953, 0.02797309, 0.02179657, 0.0183278, 0.0003808 ]
     N = 20
     convolutions = compute_convolutions(probabilities, N, q=0.0)
@@ -46,9 +89,28 @@ The difference between `calculate_objective_serv_time_lookup` and `calculate_obj
 The test verifies whether both functions return the same results and measure the difference in execution times.
 
 ```{python}
+#| colab: {base_uri: 'https://localhost:8080/'}
+#| executionInfo: {status: ok, timestamp: 1732013158828, user_tz: 0, elapsed: 18, user: {displayName: W ten Ho, userId: '14777481866548251017'}}
+#| ExecuteTime: {end_time: '2024-12-06T09:30:30.816035Z', start_time: '2024-12-06T09:30:30.783363Z'}
 def calculate_objective_serv_time_lookup(schedule: List[int], d: int, q: float, convolutions: dict) -> Tuple[float, float]:
-  
-    sp = np.array([1], dtype=np.float64)  # Initial service process (no waiting time). JB: What does this represent? WTH: The porbability that the waiting (spillover) time is zero equals 1 at the start of the schedule.
+    """
+    Calculate the objective value based on the given schedule and parameters using precomputed convolutions.
+
+    This function uses precomputed convolutions of the service time distribution,
+    starting from the 1-fold convolution (key 1) which contains the adjusted service time distribution.
+
+    Parameters:
+    schedule (List[int]): A list representing the number of patients scheduled in each time slot.
+    d (int): Duration threshold or maximum allowed service time per slot.
+    q (float): No-show probability.
+    convolutions (dict): Precomputed convolutions of the service time distribution, with key 1 containing the adjusted service time distribution.
+
+    Returns:
+    Tuple[float, float]:
+        - ewt (float): The sum of expected waiting times.
+        - esp (float): The expected spillover time (overtime).
+    """
+    sp = np.array([1], dtype=np.float64)  # Initial service process (no waiting time) JB: What does this represent?
     ewt = 0  # Total expected waiting time
 
     for x in schedule:
@@ -56,9 +118,23 @@ def calculate_objective_serv_time_lookup(schedule: List[int], d: int, q: float, 
             # No patients in this time slot
             # Adjust sp for the duration d (service process moves ahead)
             sp_new = []
-            sp_new.append(np.sum(sp[:d + 1]))
+            sp_new.append(np.sum(sp[:d + 1]))  # JB: replace this and previous line by: sp_new = [np.sum(sp[:d + 1])]
             sp_new.extend(sp[d + 1:])
-            sp = np.array(sp_new)
+            sp = np.array(sp_new)  
+            
+            """
+            JB: perhaps the above is faster using numpy only:
+            
+            sp = np.concatenate([np.sum(sp[:d + 1]), sp[d + 1:]]) WTH: this causes a problem for a schedule that has zero patients in the first interval. In that case sp = [1] with length 1 < d,  sp[d + 1:] will have length zero and zero-dimensional arrays cannot be concatenated.
+            
+            or something like this is even faster:
+            
+            sp[d] = np.sum(sp[:d + 1])
+            sp = sp[d:]
+            
+            the test at the end of this notebook seems to suggest that the last approach is the fastest. WTH: Last approach is not equal to np.concatenate([np.sum(sp[:d + 1]), sp[d + 1:]])
+            
+            """
         else:
             # Patients are scheduled in this time slot
             wt_temp = [sp.copy()]  # JB: The switch from st to wt here is a bit confusing to me.
@@ -85,7 +161,24 @@ def calculate_objective_serv_time_lookup(schedule: List[int], d: int, q: float, 
     return ewt, esp
 
 def calculate_objective(schedule: List[int], s: List[float], d: int, q: float) -> Tuple[float, float]:
+    """
+    Calculate the objective value based on the given schedule and parameters.
 
+    This function adjusts the service times distribution for no-shows, calculates
+    the waiting times for all patients in the schedule, sums the expected
+    waiting times, and calculates the spillover time for the last interval (overtime).
+
+    Parameters:
+    schedule (List[int]): A list representing the number of patients scheduled in each time slot.
+    s (List[float]): Service times probability distribution.
+    d (int): Duration threshold or maximum allowed service time per slot.
+    q (float): No-show probability.
+
+    Returns:
+    Tuple[float, float]:
+        - ewt (float): The sum of expected waiting times.
+        - esp (float): The expected spillover time (overtime).
+    """
     # Adjust the service time distribution for no-shows
     s = service_time_with_no_shows(s, q)
     # Initialize the service process (probability distribution of waiting times)
@@ -122,7 +215,17 @@ def calculate_objective(schedule: List[int], s: List[float], d: int, q: float) -
         esp = np.dot(range(len(sp)), sp)
     return ewt, esp
 
+# JB: I highly recommend to also just write a discrete event simulation to compare the results also with that. Didn't you do that already? It is a good way to verify the correctness of the code. 
+
 def test_calculate_objective_serv_time_lookup_with_timing():
+    """
+    Test the calculate_objective_serv_time_lookup function by comparing its outputs
+    and execution time with the original calculate_objective function.
+
+    The test verifies that both functions produce the same expected waiting time (ewt)
+    and expected spillover time (esp) for a sample schedule and parameters, and compares
+    their execution times.
+    """
 
     # Sample service time distribution (probabilities)
     s = [0., 0.00599585, 0.00644478, 0.02427306, 0.04753406, 0.07355202, 0.16864656, 0.12338866, 0.10182152, 0.09778246, 0.07283463, 0.05794873, 0.05378825, 0.04945164, 0.04805953, 0.02797309, 0.02179657, 0.0183278, 0.0003808 ]
@@ -132,7 +235,7 @@ def test_calculate_objective_serv_time_lookup_with_timing():
     s = [prob / total_prob for prob in s]
 
     # Sample schedule: Number of patients scheduled in each time slot
-    schedule = [0, 2, 3, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]
+    schedule = [12, 2, 3, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]
 
     # Parameters
     d = 5       # Duration threshold or maximum allowed service time per slot
