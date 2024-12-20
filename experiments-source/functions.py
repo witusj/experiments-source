@@ -5,7 +5,7 @@ import numpy as np
 import time
 import pickle
 from itertools import combinations_with_replacement, combinations
-from typing import List, Generator, Tuple
+from typing import List, Generator, Tuple, Dict
 import networkx as nx
 import plotly.graph_objects as go
 import plotly.subplots as sp
@@ -418,113 +418,134 @@ def create_neighbors_list_single_swap(S: List[List[int]]) -> List[Tuple[List[int
 
     return neighbors_list
 
-def calculate_objective(schedule: List[int], s: List[float], d: int, q: float) -> Tuple[float, float]:
+def calculate_objective_serv_time_lookup(schedule: List[int], d: int, convolutions: Dict[int, np.ndarray]) -> Tuple[float, float]:
     """
-    Calculate the objective value based on the given schedule and parameters.
+    Calculate the expected waiting time (ewt) and expected spillover time (esp) using 
+    a precomputed set of convolutions for the service time distribution.
 
-    This function adjusts the service times distribution for no-shows, calculates 
-    the waiting times for all patients in the schedule, sums the expected 
-    waiting times, and calculates the spillover time for the last interval (overtime).
+    This function simulates the progression of a schedule of patients through 
+    service times, using a "lookup" approach where convolution results for multiple 
+    patients are precomputed. By doing so, it avoids recomputing convolutions 
+    repeatedly within the loop, potentially improving performance.
 
-    Parameters:
-    schedule (List[int]): A list representing the number of patients scheduled in each time slot.
-    s (List[float]): Service times probability distribution.
-    d (int): Duration threshold or maximum allowed service time per slot.
-    q (float): No-show probability.
+    Args:
+        schedule (List[int]): List indicating how many patients are scheduled in each timeslot.
+        d (int): Duration threshold to which the waiting time distribution is truncated or shifted.
+        convolutions (Dict[int, np.ndarray]): Precomputed convolutions for service times up to max patients in a slot.
 
     Returns:
-    Tuple[float, float]: 
-        - ewt (float): The sum of expected waiting times.
-        - esp (float): The expected spillover time (overtime).
+        Tuple[float, float]: 
+            - ewt (float): Expected waiting time of all patients in the given schedule.
+            - esp (float): Expected spillover time, i.e., how much waiting time 
+                           extends beyond the last timeslot.
+    """
+    # Initial service process distribution: no waiting at the start (prob=1 at wait=0)
+    sp = np.array([1], dtype=np.float64)
+    ewt = 0.0  # Total expected waiting time
+
+    for x in schedule:
+        if x == 0:
+            # No patients in this timeslot: the waiting time distribution 
+            # moves forward in time by 'd' units.
+            sp_new = []
+            # The probability of waiting times up to d shifts into one lumped probability
+            # (like "catching up" after a gap with no patients).
+            sp_new.append(np.sum(sp[:d + 1]))
+            # The remainder of the distribution shifts accordingly
+            sp_new.extend(sp[d + 1:])
+            sp = np.array(sp_new)
+        else:
+            # Patients are scheduled in this timeslot.
+            # wt_temp will hold the waiting time distributions after each patient.
+            wt_temp = [sp.copy()]
+
+            # Add expected waiting time for the first patient
+            ewt += np.dot(range(len(sp)), sp)
+
+            # For each additional patient beyond the first
+            for i in range(1, x):
+                # Get the adjusted service time distribution (usually the first order convolution)
+                conv_s = convolutions.get(1)
+                # Convolve the previous waiting distribution with the service distribution
+                wt = np.convolve(wt_temp[i - 1], conv_s)
+                wt_temp.append(wt)
+
+                # Add the expected waiting time for this additional patient
+                ewt += np.dot(range(len(wt)), wt)
+
+            # After serving x patients in this slot, update the service process (sp)
+            # for the next timeslot using the last patient's waiting time distribution.
+            conv_s = convolutions.get(1)
+            sp = np.convolve(wt_temp[-1], conv_s)
+
+            # Adjust sp for the duration d, similarly to the no-patient case
+            sp_new = []
+            sp_new.append(np.sum(sp[:d + 1]))
+            sp_new.extend(sp[d + 1:])
+            sp = np.array(sp_new)
+
+    # The expected spillover time is the expectation of the final waiting time distribution (sp)
+    esp = np.dot(range(len(sp)), sp)
+    return ewt, esp
+
+
+def calculate_objective(schedule: List[int], s: List[float], d: int, q: float) -> Tuple[float, float]:
+    """
+    Calculate the expected waiting time (ewt) and expected spillover time (esp) without precomputed convolutions.
+
+    This function directly computes the waiting time distributions by convolving 
+    the service time distribution for each patient in each timeslot. This can be 
+    more computationally expensive compared to using a lookup approach.
+
+    Args:
+        schedule (List[int]): List indicating how many patients are scheduled in each timeslot.
+        s (List[float]): Base service time probability distribution.
+        d (int): Duration threshold for the service process distribution.
+        q (float): Probability of no-shows.
+
+    Returns:
+        Tuple[float, float]:
+            - ewt (float): Total expected waiting time across all patients.
+            - esp (float): Expected spillover time.
     """
     # Adjust the service time distribution for no-shows
     s = service_time_with_no_shows(s, q)
-    # Initialize the service process (probability distribution of waiting times)
+
+    # Initial waiting time distribution (no waiting at start)
     sp = np.array([1], dtype=np.float64)
     wt_list = []
-    ewt = 0  # Expected waiting time
+    ewt = 0.0
+
     for x in schedule:
         if x == 0:
-            # No patients in this time slot
+            # No patients in this time slot, so the distribution just advances by d
             wt_temp = [np.array(sp)]
             wt_list.append([])
             sp = []
             sp.append(np.sum(wt_temp[-1][:d + 1]))
             sp.extend(wt_temp[-1][d + 1:])
         else:
-            # Patients are scheduled in this time slot
+            # Patients are present in this time slot
             wt_temp = [np.array(sp)]
-            # Add expected waiting time for the first patient
+            # Expected waiting time for the first patient in this slot
             ewt += np.dot(range(len(sp)), sp)
-            # For each additional patient
+
+            # For each subsequent patient in this slot
             for i in range(x - 1):
-                # Convolve the waiting time with the service time distribution
                 wt = np.convolve(wt_temp[i], s)
                 wt_temp.append(wt)
-                # Add expected waiting time
                 ewt += np.dot(range(len(wt)), wt)
+
             wt_list.append(wt_temp)
-            # Update the service process for the next time slot
-            sp = []
+            # Update the service process for next slot
             convolved = np.convolve(wt_temp[-1], s)
+            sp = []
             sp.append(np.sum(convolved[:d + 1]))
             sp.extend(convolved[d + 1:])
-    # Calculate expected spillover time
-    esp = np.dot(range(len(sp)), sp)
-    return ewt, esp
-  
-def calculate_objective_serv_time_lookup(schedule: List[int], d: int, q: float, convolutions: dict) -> Tuple[float, float]:
-    """
-    Calculate the objective value based on the given schedule and parameters using precomputed convolutions.
 
-    This function uses precomputed convolutions of the service time distribution,
-    starting from the 1-fold convolution (key 1) which contains the adjusted service time distribution.
+        # Calculate expected spillover time after handling this slot
+        esp = np.dot(range(len(sp)), sp)
 
-    Parameters:
-    schedule (List[int]): A list representing the number of patients scheduled in each time slot.
-    d (int): Duration threshold or maximum allowed service time per slot.
-    q (float): No-show probability.
-    convolutions (dict): Precomputed convolutions of the service time distribution, with key 1 containing the adjusted service time distribution.
-
-    Returns:
-    Tuple[float, float]: 
-        - ewt (float): The sum of expected waiting times.
-        - esp (float): The expected spillover time (overtime).
-    """
-    sp = np.array([1], dtype=np.float64)  # Initial service process (no waiting time)
-    ewt = 0  # Total expected waiting time
-
-    for x in schedule:
-        if x == 0:
-            # No patients in this time slot
-            # Adjust sp for the duration d (service process moves ahead)
-            sp_new = []
-            sp_new.append(np.sum(sp[:d + 1]))
-            sp_new.extend(sp[d + 1:])
-            sp = np.array(sp_new)
-        else:
-            # Patients are scheduled in this time slot
-            wt_temp = [sp.copy()]
-            # Add expected waiting time for the first patient
-            ewt += np.dot(range(len(sp)), sp)
-            # For each additional patient
-            for i in range(1, x):
-                # The waiting time distribution for the ith patient is the convolution
-                # of the previous patient's waiting time with s (adjusted service time distribution)
-                conv_s = convolutions.get(1)  # Adjusted service time distribution
-                wt = np.convolve(wt_temp[i - 1], conv_s)
-                wt_temp.append(wt)
-                ewt += np.dot(range(len(wt)), wt)
-            # Update sp for the next time slot
-            conv_s = convolutions.get(1)  # Adjusted service time distribution
-            sp = np.convolve(wt_temp[-1], conv_s)
-            # Adjust sp for duration d
-            sp_new = []
-            sp_new.append(np.sum(sp[:d + 1]))
-            sp_new.extend(sp[d + 1:])
-            sp = np.array(sp_new)
-    # Expected spillover time
-    esp = np.dot(range(len(sp)), sp)
     return ewt, esp
 
 def service_time_with_no_shows(s: List[float], q: float) -> List[float]:
@@ -662,12 +683,12 @@ def compute_convolutions(probabilities: List[float], N: int, q: float = 0.0) -> 
             convolutions[k] = result
     return convolutions
 
-def local_search(x, d, q, convolutions, w, v_star, size=2, echo=False):
+def local_search(x, d, convolutions, w, v_star, size=2, echo=False):
     # Initialize the best solution found so far 'x_star' to the input vector 'x'
     x_star = np.array(x).flatten()  # Keep as 1D array
 
     # Calculate initial objectives and cost
-    objectives_star = calculate_objective_serv_time_lookup(x_star, d, q, convolutions)
+    objectives_star = calculate_objective_serv_time_lookup(x_star, d, convolutions)
     c_star = w * objectives_star[0] + (1 - w) * objectives_star[1]
 
     # Set the value of 'T' to the length of the input vector 'x'
@@ -688,7 +709,7 @@ def local_search(x, d, q, convolutions, w, v_star, size=2, echo=False):
 
         for neighbor in neighborhood:
             # Calculate objectives for the neighbor
-            objectives = calculate_objective_serv_time_lookup(neighbor, d, q, convolutions)
+            objectives = calculate_objective_serv_time_lookup(neighbor, d, convolutions)
             cost = w * objectives[0] + (1 - w) * objectives[1]
 
             # Compare scalar costs
@@ -716,7 +737,6 @@ from typing import List, Tuple
 def local_search_w_intermediates(
     x: List[int],
     d: int,
-    q: float,
     convolutions: any,  # Replace 'any' with the actual type if known
     w: float,
     v_star: any,        # Replace 'any' with the actual type if known
@@ -745,7 +765,7 @@ def local_search_w_intermediates(
     x_star = np.array(x).flatten()  # Ensure it's a 1D array
 
     # Calculate initial objectives and cost
-    objectives_star = calculate_objective_serv_time_lookup(x_star, d, q, convolutions)
+    objectives_star = calculate_objective_serv_time_lookup(x_star, d, convolutions)
     c_star = w * objectives_star[0] + (1 - w) * objectives_star[1]
 
     # Initialize lists to store schedules and their corresponding objective values
@@ -776,7 +796,7 @@ def local_search_w_intermediates(
 
         for neighbor in neighborhood_list:
             # Calculate objectives for the neighbor
-            objectives_neighbor = calculate_objective_serv_time_lookup(neighbor, d, q, convolutions)
+            objectives_neighbor = calculate_objective_serv_time_lookup(neighbor, d, convolutions)
             cost_neighbor = w * objectives_neighbor[0] + (1 - w) * objectives_neighbor[1]
             evaluations += 1
 

@@ -166,7 +166,7 @@ for n in N:
     x = build_welch_bailey_schedule(n, T)
     x_initials.append(x)  # Store the initial schedule
     convolutions = compute_convolutions(s, n, q)
-    schedules, objectives = local_search_w_intermediates(x, d, q, convolutions, w, v_star, T)
+    schedules, objectives = local_search_w_intermediates(x, d, convolutions, w, v_star, T)
     #x_star, obj = local_search(x, d, q, convolutions, w, v_star, T)
     obj_vals.append(objectives[-1])
     x_stars.append(schedules[-1])
@@ -291,7 +291,7 @@ def process_schedule(n, T, s, d, q, w, v_star):
     print(f'Running local search for schedule with N={n}')
     x = build_welch_bailey_schedule(n, T)
     convolutions = compute_convolutions(s, n, q)
-    schedules, objectives = local_search_w_intermediates(x, d, q, convolutions, w, v_star, T)
+    schedules, objectives = local_search_w_intermediates(x, d, convolutions, w, v_star, T)
     return {
         'n': n,
         'x_initial': x,
@@ -439,11 +439,11 @@ Finally we've expanded the experiment to include larger instances. We've increas
 
 ```{python}
 # Function to process a single N
-def process_schedule(n, T, s, d, q, w, v_star):
+def process_schedule(n, T, s, d, w, v_star):
     print(f'Running local search for schedule with N={n}')
     x = build_quasi_optimal_schedule(n, T)
     convolutions = compute_convolutions(s, n, q)
-    schedules, objectives = local_search_w_intermediates(x, d, q, convolutions, w, v_star, T)
+    schedules, objectives = local_search_w_intermediates(x, d, convolutions, w, v_star, T)
     return {
         'n': n,
         'x_initial': x,
@@ -468,7 +468,7 @@ results = []
 start = time.time()
 
 # Parallelize the process_schedule function using Joblib
-results = Parallel(n_jobs=-1)(delayed(process_schedule)(n, T, s, d, q, w, v_star) for n in N)
+results = Parallel(n_jobs=-1)(delayed(process_schedule)(n, T, s, d, w, v_star) for n in N)
 
 end = time.time()
 

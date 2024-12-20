@@ -43,6 +43,7 @@ import random
 *To compare an XGBoost Machine Learning model with a simple evaluation of each individual element of the pair, we will use a pairwise ranking approach. The objective is to rank two neighboring schedules according to preference.*
 
 ```{python}
+from functions import get_v_star
 N = 12 # Number of patients
 T = 18 # Number of intervals
 d = 5 # Length of each interval
@@ -50,6 +51,7 @@ s = [0.0, 0.27, 0.28, 0.2, 0.15, 0.1] # Service times distribution
 q = 0.20 # Probability of a scheduled patient not showing up
 w = 0.8 # Weight for the waiting time in objective function
 num_schedules = 20000 # Number of schedules to sample
+v_star = get_v_star(T)
 ```
 
 *We will create a random set of pairs of neighboring schedules with* $N = `{python} N`$ patients and $T = `{python} T`$ intervals of length $d = `{python} d`$.
@@ -116,7 +118,7 @@ print(f"\nProcessing time: {data_prep_time} seconds\n")
 from functions import create_neighbors_list
 
 start = time.time()
-neighbors_list = [create_neighbors_list(schedule) for schedule in schedules] # This can be done in parellel to improve speed
+neighbors_list = [create_neighbors_list(schedule, v_star) for schedule in schedules] # This can be done in parellel to improve speed
 end = time.time()
 for i in h:
     original_schedule = neighbors_list[i][0]
@@ -303,7 +305,7 @@ print(f"\nTraining time: {modeling_time} seconds\n")
 num_test_schedules = 1000
 
 test_schedules = random_combination_with_replacement(T, N, num_test_schedules)
-test_neighbors = [create_neighbors_list(test_schedule) for test_schedule in test_schedules] # This can be done in parellel to improve speed
+test_neighbors = [create_neighbors_list(test_schedule, v_star) for test_schedule in test_schedules] # This can be done in parellel to improve speed
 
 print(f"Sampled: {len(test_schedules)} schedules\n")
 

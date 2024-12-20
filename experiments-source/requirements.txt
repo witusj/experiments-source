@@ -6,3 +6,5 @@ plotly
 scipy
 networkx
 plotly
+pytest
+jupyter

@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.5.57">
+<meta name="generator" content="quarto-1.4.551">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -33,7 +33,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
   { counter-reset: source-line 0; }
@@ -96,7 +96,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<div id="b982cb62" class="cell" data-execution_count="1">
+<div id="659ea45c" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> time</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> typing <span class="im">import</span> List, Generator, Tuple, Dict</span>
@@ -230,7 +230,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="tests-for-functions-for-calculating-objective-values">Tests for functions for calculating objective values</h2>
 <p>The difference between <code>calculate_objective_serv_time_lookup</code> and <code>calculate_objective</code> is that the former looks up pre-calculated convolutions of service times (adjusted for no-shows) from a numpy array, while the latter must calculates the convolutions for every single interval seperately.</p>
 <p>The test verifies whether both functions return the same results and measure the difference in execution times.</p>
-<div id="21ebaaa6" class="cell" data-execution_count="2">
+<div id="db5ccc7c" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> service_time_with_no_shows(s: List[<span class="bu">float</span>], q: <span class="bu">float</span>) <span class="op">-&gt;</span> List[<span class="bu">float</span>]:</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">    Adjust the service time distribution to account for no-show probability.</span></span>
@@ -437,12 +437,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-204"><a href="#cb2-204" aria-hidden="true" tabindex="-1"></a>    </span>
 <span id="cb2-205"><a href="#cb2-205" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Initial service process distribution: no waiting at the start (prob=1 at wait=0)</span></span>
 <span id="cb2-206"><a href="#cb2-206" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb2-207"><a href="#cb2-207" aria-hidden="true" tabindex="-1"></a>    es <span class="op">=</span> np.dot(<span class="bu">range</span>(<span class="bu">len</span>(s)), s)</span>
+<span id="cb2-207"><a href="#cb2-207" aria-hidden="true" tabindex="-1"></a>    es <span class="op">=</span> np.dot(<span class="bu">range</span>(<span class="bu">len</span>(s)), s) <span class="co"># Expected value of service time</span></span>
 <span id="cb2-208"><a href="#cb2-208" aria-hidden="true" tabindex="-1"></a>    sp <span class="op">=</span> np.array([<span class="dv">1</span>], dtype<span class="op">=</span>np.float64)</span>
-<span id="cb2-209"><a href="#cb2-209" aria-hidden="true" tabindex="-1"></a>    esp <span class="op">=</span> np.dot(<span class="bu">range</span>(<span class="bu">len</span>(sp)), sp)</span>
-<span id="cb2-210"><a href="#cb2-210" aria-hidden="true" tabindex="-1"></a>    ewt <span class="op">=</span> <span class="fl">0.0</span>  <span class="co"># Total expected waiting time</span></span>
+<span id="cb2-209"><a href="#cb2-209" aria-hidden="true" tabindex="-1"></a>    esp <span class="op">=</span> np.dot(<span class="bu">range</span>(<span class="bu">len</span>(sp)), sp) <span class="co"># Expected spillover time. Initially 0*100% = 0</span></span>
+<span id="cb2-210"><a href="#cb2-210" aria-hidden="true" tabindex="-1"></a>    ewt <span class="op">=</span> <span class="fl">0.0</span>  <span class="co"># Total expected waiting time. Initially equal to esp = 0</span></span>
 <span id="cb2-211"><a href="#cb2-211" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb2-212"><a href="#cb2-212" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Loop over eaxh interval in schedule</span></span>
+<span id="cb2-212"><a href="#cb2-212" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Loop over each interval in schedule</span></span>
 <span id="cb2-213"><a href="#cb2-213" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> x <span class="kw">in</span> schedule:</span>
 <span id="cb2-214"><a href="#cb2-214" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Case: zero patients in interval</span></span>
 <span id="cb2-215"><a href="#cb2-215" aria-hidden="true" tabindex="-1"></a>      <span class="co"># There is no waiting time and the spillover time distribution is adjusted for the length of the interval</span></span>
@@ -454,7 +454,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-221"><a href="#cb2-221" aria-hidden="true" tabindex="-1"></a>        esp <span class="op">=</span> np.dot(<span class="bu">range</span>(<span class="bu">len</span>(sp)), sp) <span class="co"># Calculate expected spillover time</span></span>
 <span id="cb2-222"><a href="#cb2-222" aria-hidden="true" tabindex="-1"></a>        </span>
 <span id="cb2-223"><a href="#cb2-223" aria-hidden="true" tabindex="-1"></a>      <span class="co"># Case: x = schedule[t] patients in interval</span></span>
-<span id="cb2-224"><a href="#cb2-224" aria-hidden="true" tabindex="-1"></a>      <span class="co"># The first patient has to wait until any spillover ti4me has passed. Subsequent patients </span></span>
+<span id="cb2-224"><a href="#cb2-224" aria-hidden="true" tabindex="-1"></a>      <span class="co"># The first patient has to wait until any spillover time has passed. The waiting time of the next patient is the total waiting time of the previous patient plus one service time.</span></span>
 <span id="cb2-225"><a href="#cb2-225" aria-hidden="true" tabindex="-1"></a>      <span class="cf">else</span>:</span>
 <span id="cb2-226"><a href="#cb2-226" aria-hidden="true" tabindex="-1"></a>        ewt <span class="op">+=</span> x <span class="op">*</span> esp <span class="op">+</span> math.comb(x, <span class="dv">2</span>) <span class="op">*</span> es <span class="co"># Expected total waiting time for all patients in interval</span></span>
 <span id="cb2-227"><a href="#cb2-227" aria-hidden="true" tabindex="-1"></a>        work <span class="op">=</span> np.convolve(sp, convolutions.get(x)) <span class="co"># Calculate distribution total amount of work in interval</span></span>
@@ -513,7 +513,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-280"><a href="#cb2-280" aria-hidden="true" tabindex="-1"></a>    ewt_lookup, esp_lookup <span class="op">=</span> calculate_objective_serv_time_lookup(schedule, d, convolutions)</span>
 <span id="cb2-281"><a href="#cb2-281" aria-hidden="true" tabindex="-1"></a>    time_lookup <span class="op">=</span> time.time() <span class="op">-</span> start_time_lookup</span>
 <span id="cb2-282"><a href="#cb2-282" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb2-283"><a href="#cb2-283" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Measure execution time for the lookup function</span></span>
+<span id="cb2-283"><a href="#cb2-283" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Measure execution time for the expected values function</span></span>
 <span id="cb2-284"><a href="#cb2-284" aria-hidden="true" tabindex="-1"></a>    start_time_exp_vals <span class="op">=</span> time.time()</span>
 <span id="cb2-285"><a href="#cb2-285" aria-hidden="true" tabindex="-1"></a>    ewt_exp_vals, esp_exp_vals <span class="op">=</span> calculate_objective_exp_vals(schedule, d, convolutions)</span>
 <span id="cb2-286"><a href="#cb2-286" aria-hidden="true" tabindex="-1"></a>    time_exp_vals <span class="op">=</span> time.time() <span class="op">-</span> start_time_exp_vals</span>
@@ -559,22 +559,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-326"><a href="#cb2-326" aria-hidden="true" tabindex="-1"></a>test_calculate_objective_serv_time_lookup_with_timing()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Original Function Output:
-Expected Waiting Time (ewt): 118.62763950906788
+Expected Waiting Time (ewt): 118.62763950906786
 Expected Spillover Time (esp): 0.1169505699197238
-Execution Time: 0.000383 seconds
+Execution Time: 0.001198 seconds
 
 Lookup Function Output:
-Expected Waiting Time (ewt): 118.62763950906788
+Expected Waiting Time (ewt): 118.62763950906786
 Expected Spillover Time (esp): 0.1169505699197238
-Execution Time: 0.000241 seconds
+Execution Time: 0.000715 seconds
 
 Expected Values Function Output:
 Expected Waiting Time (ewt): 118.62763950906786
 Expected Spillover Time (esp): 0.1169505699197238
-Execution Time: 0.000253 seconds
+Execution Time: 0.000689 seconds
 
 Test passed: The outputs of both functions match within the defined tolerance.
-The lookup function is 1.59 times faster than the original function.</code></pre>
+The lookup function is 1.68 times faster than the original function.</code></pre>
 </div>
 </div>
 </section>
@@ -616,7 +616,18 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }
     return false;
   }
-  const onCopySuccess = function(e) {
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
     // button target
     const button = e.trigger;
     // don't keep focus
@@ -648,29 +659,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }, 1000);
     // clear code selection
     e.clearSelection();
-  }
-  const getTextToCopy = function(trigger) {
-      const codeEl = trigger.previousElementSibling.cloneNode(true);
-      for (const childEl of codeEl.children) {
-        if (isCodeAnnotation(childEl)) {
-          childEl.remove();
-        }
-      }
-      return codeEl.innerText;
-  }
-  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
-    text: getTextToCopy
   });
-  clipboard.on('success', onCopySuccess);
-  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
-    // For code content inside modals, clipBoardJS needs to be initialized with a container option
-    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
-    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
-      text: getTextToCopy,
-      container: window.document.getElementById('quarto-embedded-source-code-modal')
-    });
-    clipboardModal.on('success', onCopySuccess);
-  }
     var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
     var mailtoRegex = new RegExp(/^mailto:/);
       var filterRegex = new RegExp('/' + window.location.host + '/');
@@ -678,7 +667,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
         return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
     }
     // Inspect non-navigation links and adorn them if external
- 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
     for (var i=0; i<links.length; i++) {
       const link = links[i];
       if (!isInternal(link.href)) {

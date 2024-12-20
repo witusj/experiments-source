@@ -347,12 +347,12 @@ def calculate_objective_exp_vals(schedule: List[int], d: int, convolutions: Dict
     
     # Initial service process distribution: no waiting at the start (prob=1 at wait=0)
     
-    es = np.dot(range(len(s)), s)
+    es = np.dot(range(len(s)), s) # Expected value of service time
     sp = np.array([1], dtype=np.float64)
-    esp = np.dot(range(len(sp)), sp)
-    ewt = 0.0  # Total expected waiting time
+    esp = np.dot(range(len(sp)), sp) # Expected spillover time. Initially 0*100% = 0
+    ewt = 0.0  # Total expected waiting time. Initially equal to esp = 0
     
-    # Loop over eaxh interval in schedule
+    # Loop over each interval in schedule
     for x in schedule:
       # Case: zero patients in interval
       # There is no waiting time and the spillover time distribution is adjusted for the length of the interval
@@ -364,7 +364,7 @@ def calculate_objective_exp_vals(schedule: List[int], d: int, convolutions: Dict
         esp = np.dot(range(len(sp)), sp) # Calculate expected spillover time
         
       # Case: x = schedule[t] patients in interval
-      # The first patient has to wait until any spillover ti4me has passed. Subsequent patients 
+      # The first patient has to wait until any spillover time has passed. The waiting time of the next patient is the total waiting time of the previous patient plus one service time.
       else:
         ewt += x * esp + math.comb(x, 2) * es # Expected total waiting time for all patients in interval
         work = np.convolve(sp, convolutions.get(x)) # Calculate distribution total amount of work in interval
@@ -423,7 +423,7 @@ def test_calculate_objective_serv_time_lookup_with_timing():
     ewt_lookup, esp_lookup = calculate_objective_serv_time_lookup(schedule, d, convolutions)
     time_lookup = time.time() - start_time_lookup
     
-    # Measure execution time for the lookup function
+    # Measure execution time for the expected values function
     start_time_exp_vals = time.time()
     ewt_exp_vals, esp_exp_vals = calculate_objective_exp_vals(schedule, d, convolutions)
     time_exp_vals = time.time() - start_time_exp_vals

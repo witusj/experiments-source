@@ -39,6 +39,7 @@ import pickle
 ### Load Parameters
 
 ```{python}
+from functions import get_v_star
 N = 22
 T = 20
 l = 10
@@ -57,6 +58,7 @@ w = data_params['w'] # Weight for the waiting time in objective function
 l = data_params['l']
 num_schedules = data_params['num_schedules'] # Number of schedules to sample
 convolutions = data_params['convolutions']
+v_star = get_v_star(T)
 
 for key in data_params.keys():
   print(f"{key} = {data_params[key]}")
@@ -266,7 +268,7 @@ from functions import random_combination_with_replacement, create_neighbors_list
 num_test_schedules = 1000
 
 test_schedules = random_combination_with_replacement(T, N, num_test_schedules)
-test_neighbors = [create_neighbors_list(test_schedule) for test_schedule in test_schedules] # This can be done in parellel to improve speed
+test_neighbors = [create_neighbors_list(test_schedule, v_star) for test_schedule in test_schedules] # This can be done in parellel to improve speed
 
 print(f"Sampled: {len(test_schedules)} schedules\n")
 
@@ -275,7 +277,7 @@ start = time.time()
 test_objectives_schedule_1 = [
     w * result[0] + (1 - w) * result[1]
     for test_neighbor in test_neighbors
-    for result in [calculate_objective_serv_time_lookup(test_neighbor[0], d, q, convolutions)]
+    for result in [calculate_objective_serv_time_lookup(test_neighbor[0], d, convolutions)]
 ]
 end = time.time()
 evaluation_time = end - start
@@ -283,7 +285,7 @@ print(f"Evaluation time: {evaluation_time} seconds,\nNumber of evaluated schedul
 test_objectives_schedule_2 = [
     w * result[0] + (1 - w) * result[1]
     for test_neighbor in test_neighbors
-    for result in [calculate_objective_serv_time_lookup(test_neighbor[1], d, q, convolutions)]
+    for result in [calculate_objective_serv_time_lookup(test_neighbor[1], d, convolutions)]
 ]
 test_rankings = [0 if test_obj < test_objectives_schedule_2[i] else 1 for i, test_obj in enumerate(test_objectives_schedule_1)]
 
