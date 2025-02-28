@@ -1,0 +1,172 @@
+---
+title: "Tutorial Fast Fourier Transformations"
+author: "AI generated"
+jupyter: python3
+---
+
+Below is a comprehensive tutorial on using FFT to work with probability distributions—specifically for computing convolutions of probability mass functions (PMFs). This technique is very useful when you want to determine the distribution of the sum of independent random variables.
+
+---
+
+# 1. Introduction
+
+When you have two independent discrete random variables with PMFs \(f\) and \(g\), the probability distribution of their sum is given by the convolution:
+
+$$
+(f * g)[n] = \sum_{k} f[k] \, g[n - k]
+$$
+
+For example, if you have a PMF representing the waiting time for a service, convolving that PMF with itself gives you the distribution of the total waiting time for two independent services. Direct convolution can be computationally expensive for long distributions, but using the Fast Fourier Transform (FFT) can accelerate this process.
+
+---
+
+# 2. FFT and Convolution
+
+The **Convolution Theorem** states that the Fourier transform of a convolution is the pointwise product of the Fourier transforms. In other words:
+
+$$
+\mathcal{F}(f * g) = \mathcal{F}(f) \cdot \mathcal{F}(g)
+$$
+
+This means that instead of summing over products (which is \(O(n^2)\) for two sequences of length \(n\)), we can:
+
+1. Transform both PMFs into the frequency domain using FFT.
+2. Multiply them elementwise.
+3. Convert the product back to the time domain using the inverse FFT.
+
+This approach reduces the computational complexity to approximately \(O(n \log n)\).
+
+---
+
+# 3. Code Example: FFT-Based Convolution for PMFs
+
+Below is a Python example that:
+- Defines a PMF for a discrete random variable.
+- Uses an FFT-based function to compute the convolution.
+- Visualizes the original and convolved PMFs using Plotly.
+
+Make sure to install the required packages if you haven’t already:
+
+```
+pip install numpy plotly
+```
+
+```{python}
+import numpy as np
+import plotly.graph_objects as go
+import plotly.io as pio
+
+# --- Define a Sample Probability Mass Function (PMF) ---
+# For example, a custom PMF representing a discrete outcome (like a service time)
+pmf = np.array([0.1, 0.2, 0.3, 0.25, 0.15])
+assert np.isclose(np.sum(pmf), 1.0), "PMF must sum to 1."
+print("Original PMF:", pmf)
+
+# --- FFT-Based Convolution Function ---
+def fft_convolve(a, b):
+    """
+    Convolve two 1-D arrays (PMFs) using FFT.
+    
+    Parameters:
+        a, b (np.array): Input probability distributions.
+        
+    Returns:
+        np.array: The convolution result, corresponding to the PMF of the sum.
+    """
+    # The full convolution length for sequences of lengths L and M is L + M - 1.
+    n = len(a) + len(b) - 1
+    # Zero-pad to the next power of 2 for efficient FFT computation.
+    n_fft = 2 ** int(np.ceil(np.log2(n)))
+    A = np.fft.rfft(a, n=n_fft)
+    B = np.fft.rfft(b, n=n_fft)
+    conv_result = np.fft.irfft(A * B, n=n_fft)[:n]
+    return conv_result
+
+# --- Compute Convolutions ---
+# Distribution of a single random variable (the original PMF)
+pmf_single = pmf
+
+# Distribution of the sum of 2 independent variables (e.g., total service time for 2 events)
+pmf_two = fft_convolve(pmf, pmf)
+
+# Distribution of the sum of 3 independent variables
+pmf_three = fft_convolve(pmf_two, pmf)
+
+# --- Prepare Data for Visualization ---
+# Create x-axis values representing possible outcomes (e.g., sum of service times)
+x_single = np.arange(len(pmf_single))
+x_two = np.arange(len(pmf_two))
+x_three = np.arange(len(pmf_three))
+```
+
+```{python}
+# --- Plot the Distributions using Plotly ---
+fig = go.Figure()
+
+fig.add_trace(go.Bar(x=x_single, y=pmf_single, name="Single PMF"))
+fig.add_trace(go.Bar(x=x_two, y=pmf_two, name="Sum of 2 Variables"))
+fig.add_trace(go.Bar(x=x_three, y=pmf_three, name="Sum of 3 Variables"))
+
+fig.update_layout(
+    title="Probability Distributions via Convolution (Using FFT)",
+    xaxis_title="Outcome (Sum)",
+    yaxis_title="Probability",
+    barmode="group"
+)
+
+fig.show()
+```
+
+---
+
+# 4. Explanation of the Code
+
+### Defining a PMF
+
+In this example, we define a simple PMF:
+- **`pmf`**: A NumPy array representing a discrete probability distribution (for example, service times or waiting times).  
+- We use an assertion to ensure that the PMF sums to 1.
+
+### FFT-Based Convolution Function
+
+- **`fft_convolve(a, b)`**:
+  - **Length Calculation:**  
+    Computes the expected length \( n = \text{len}(a) + \text{len}(b) - 1 \) of the convolution.
+  - **Zero-Padding:**  
+    Pads the arrays to the next power of 2 (stored in `n_fft`) to maximize FFT efficiency.
+  - **FFT Computation:**  
+    Uses `np.fft.rfft` to compute the FFTs of the padded PMFs.
+  - **Elementwise Multiplication:**  
+    Multiplies the FFTs elementwise. This step corresponds to the convolution operation in the time (or probability) domain.
+  - **Inverse FFT and Trimming:**  
+    Applies the inverse FFT with `np.fft.irfft` and slices the result to return only the first \( n \) elements—the actual convolution result.
+
+### Computing Convolutions
+
+- **`pmf_two`**: Represents the probability distribution for the sum of two independent random variables (each with PMF `pmf`).
+- **`pmf_three`**: Represents the distribution for the sum of three independent random variables, computed by convolving the two-variable PMF with the original PMF.
+
+### Visualization with Plotly
+
+- **Bar Charts:**  
+  We use Plotly's bar chart functionality to visualize the PMFs:
+  - The x-axis represents the possible outcomes (e.g., the total sum).
+  - The y-axis shows the probability for each outcome.
+- **Grouped Layout:**  
+  The distributions for one, two, and three summed variables are plotted together for easy comparison.
+
+---
+
+# 5. Conclusion
+
+This tutorial has shown how FFT can be leveraged to efficiently compute the convolution of probability distributions. This is particularly useful in probability and statistics when you need to find the distribution of a sum of independent random variables.
+
+Key takeaways:
+- **FFT for Convolution:**  
+  The FFT reduces the computational cost of convolving long PMFs, enabling efficient analysis.
+- **Application to PMFs:**  
+  Convolving a PMF with itself gives you the distribution of the sum of independent events—a common problem in probability (e.g., total service time, sum of dice rolls).
+- **Visualization:**  
+  Plotly provides interactive plots that help you visualize and compare the original and convolved distributions.
+
+Feel free to experiment with different PMFs and convolution depths to see how the distribution evolves when summing independent random variables!

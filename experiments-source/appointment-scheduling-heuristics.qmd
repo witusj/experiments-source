@@ -119,10 +119,13 @@ $$ This means that the total solution space varies between `{python} int(math.co
 # Define parameters
 N = 4  # Number of patients
 T = 3  # Number of time intervals
-s = [0.3, 0.2, 0.1, 0.05, 0.15, 0.2]  # Example service time probability distribution
+s = [0.1, 0.15, 0.15, 0.15, 0.25, 0.2]  # Example service time probability distribution
 d = 2  # Duration threshold
 q = 0.1  # No-show probability
 w = 0.5  # Weight for waiting time in the objective
+adj_service_t_no_shows = service_time_with_no_shows(s, q)
+exp_adj_s = sum(i * p for i, p in enumerate(adj_service_t_no_shows))
+print(f"Expected adjusted service time:{exp_adj_s}")
 
 # Create and visualize the network
 fig = create_schedule_network(N=N, T=T, s=s, d=d, q=q, w=w, echo=True)
@@ -147,7 +150,7 @@ from functions import create_random_schedules, calculate_objective, compute_conv
 # Parameters
 N = range(16, 20)
 T = 15
-s = [0.3, 0.2, 0.1, 0.05, 0.15, 0.2]  # Example service time probability distribution
+s = [0.1, 0.15, 0.15, 0.15, 0.25, 0.2]  # Example service time probability distribution
 d = 2  # Duration threshold
 q = 0.1  # No-show probability
 w = 0.1  # Weight for waiting time in the objective
@@ -304,9 +307,6 @@ def process_schedule(n, T, s, d, q, w, v_star):
 # Parameters
 N = range(16, 20)
 T = 15
-s = [0.3, 0.2, 0.1, 0.05, 0.15, 0.2]  # Example service time probability distribution
-d = 2  # Duration threshold
-q = 0.1  # No-show probability
 w = 0.9  # Weight for waiting time in the objective
 v_star = get_v_star(T)
 
@@ -438,8 +438,196 @@ for idx, (n, schedules, objectives) in enumerate(zip(N, schedules_list, objectiv
 Finally we've expanded the experiment to include larger instances. We've increased the number of intervals and patients, while keeping the weight for the waiting time in the objective function at 0.9.
 
 ```{python}
+# Parameters
+N = range(21, 24)
+T = 20
+w = 0.9  # Weight for waiting time in the objective
+v_star = get_v_star(T)
+
+# Lists to store results
+results = []
+
+start = time.time()
+
+# Parallelize the process_schedule function using Joblib
+results = Parallel(n_jobs=-1)(delayed(process_schedule)(n, T, s, d, q, w, v_star) for n in N)
+
+end = time.time()
+
+# Extract results
+x_initials = [result['x_initial'] for result in results]
+schedules_list = [result['schedules'] for result in results]
+objectives_list = [result['objectives'] for result in results]
+x_stars = [result['x_star'] for result in results]
+obj_vals = [result['obj_val'] for result in results]
+
+print("Optimized schedules:", x_stars)
+print("Objective values:", obj_vals)
+print(f"Search time: {end - start:.2f} seconds")
+```
+
+```{python}
+# Number of subplots needed
+num_subplots = len(x_stars)
+
+# Create a subplot figure with one chart per subplot
+fig = sp.make_subplots(
+    rows=num_subplots, 
+    cols=1, 
+    shared_xaxes=True, 
+    subplot_titles=[f'n = {n}' for n in N]
+)
+
+# Add each initial and optimized schedule to its respective subplot
+for idx, (x_initial, x_star) in enumerate(zip(x_initials, x_stars)):
+    # Add initial schedule as a dotted line
+    fig.add_trace(
+        go.Scatter(
+            x=list(range(T)), 
+            y=x_initial, 
+            mode='lines', 
+            name='Initial schedule' if idx == 0 else None,  # Show legend only once
+            line=dict(dash='dot', color='blue')
+        ), 
+        row=idx + 1, 
+        col=1
+    )
+    
+    # Add optimized schedule as a solid line with markers
+    fig.add_trace(
+        go.Scatter(
+            x=list(range(T)), 
+            y=x_star, 
+            mode='lines+markers', 
+            name='Optimized schedule' if idx == 0 else None,  # Show legend only once
+            line=dict(color='red')
+        ), 
+        row=idx + 1, 
+        col=1
+    )
+
+# Update layout properties
+fig.update_layout(
+    height=600 * num_subplots,  # Adjust height based on the number of subplots
+    title=dict(
+        text=f"Optimal schedules across different values of N\n(T={T}, w={w})",
+        x=0.5,  # Center the title horizontally
+        y=0.95,  # Adjust the vertical position (closer to the top)
+        font=dict(size=20),  # Optional: Adjust title font size
+        pad=dict(t=50)  # Add padding at the top of the title
+    ),
+    xaxis_title="Time slot (x)",
+    yaxis_title="# of patients (y)",
+    template="plotly_white",
+    showlegend=False  # Enable legend to distinguish between initial and optimized schedules
+)
+
+# Set consistent y-axis ticks for each subplot
+for i in range(1, num_subplots + 1):
+    fig.update_yaxes(tickmode='linear', tick0=0, dtick=1, row=i, col=1)
+
+# Optionally, adjust the legend position
+fig.update_layout(legend=dict(
+    orientation="h",
+    yanchor="bottom",
+    y=1.02,
+    xanchor="right",
+    x=1
+))
+
+# Show the Plotly figure
+fig.show()
+```
+
+::: column-page
+```{python}
+for idx, (n, schedules, objectives) in enumerate(zip(N, schedules_list, objectives_list), start=1):
+    print(f'Processing N={n}, number of schedules: {len(schedules)}')
+    
+    # Create individual network graph
+    individual_fig = create_schedule_network_from_lists(
+        schedules=schedules,
+        objective_values=objectives,
+        echo=False
+    )
+    
+    individual_fig.update_layout(
+        autosize=False,
+        width=1500,
+        height=1800,
+        margin=dict(
+            l=50,
+            r=50,
+            b=100,
+            t=100,
+            pad=4
+        )
+    )
+    
+    # Show the individual network graph
+    individual_fig.show()
+```
+:::
+
+Until now we have used the Bailey-Welch rule to set the initial schedule for out local search. Comparing the initial schedule with the final optimal schedule we observed a certain pattern. We tried to capture this pattern in a adjusted model for the initial schedule.
+
+```python
+def build_quasi_optimal_schedule(N, T):
+    """
+    Build a quasi-optimal schedule starting with [2, 1, 1, 0, ...] 
+    and then sequences of [1, 1, 1, 1, 0].
+
+    Parameters:
+    N (int): Number of patients to be scheduled.
+    T (int): Number of time intervals in the schedule.
+
+    Returns:
+    list: A schedule of length T where each item represents the number of patients scheduled
+          at the corresponding time interval.
+    """
+    # Initialize the schedule with zeros
+    schedule = [0] * T
+
+    # Schedule the first four time slots: [2, 1, 1, 0]
+    schedule[0] = 2
+    schedule[1] = 1
+    schedule[2] = 1
+    # Time slot 3 remains 0 as per the pattern
+    remaining_patients = N - sum(schedule)
+
+    # Start from time slot 4
+    t = 4
+
+    # Continue scheduling in sequences of [1, 1, 1, 1, 0]
+    while remaining_patients > 0 and t < T - 1:
+        for i in range(5):
+            if i < 4 and t < T - 1:
+                # Schedule 1 patient for the first four slots
+                schedule[t] = 1
+                remaining_patients -= 1
+                t += 1
+                if remaining_patients <= 0:
+                    break
+            else:
+                # Leave the fifth slot empty (0 patients)
+                t += 1
+                if t >= T - 1:
+                    break
+        if t >= T - 1:
+            break
+
+    # Push any remaining patients to the last time slot
+    if remaining_patients > 0:
+        schedule[-1] += remaining_patients
+
+    return schedule
+```
+
+We then re-ran the experiment.
+
+```{python}
 # Function to process a single N
-def process_schedule(n, T, s, d, w, v_star):
+def process_schedule(n, T, s, d, q, w, v_star):
     print(f'Running local search for schedule with N={n}')
     x = build_quasi_optimal_schedule(n, T)
     convolutions = compute_convolutions(s, n, q)
@@ -456,10 +644,7 @@ def process_schedule(n, T, s, d, w, v_star):
 # Parameters
 N = range(21, 24)
 T = 20
-s = [0.3, 0.2, 0.1, 0.05, 0.15, 0.2]  # Example service time probability distribution
-d = 2  # Duration threshold
-q = 0.1  # No-show probability
-w = 0.5  # Weight for waiting time in the objective
+w = 0.9  # Weight for waiting time in the objective
 v_star = get_v_star(T)
 
 # Lists to store results
@@ -468,7 +653,7 @@ results = []
 start = time.time()
 
 # Parallelize the process_schedule function using Joblib
-results = Parallel(n_jobs=-1)(delayed(process_schedule)(n, T, s, d, w, v_star) for n in N)
+results = Parallel(n_jobs=-1)(delayed(process_schedule)(n, T, s, d, q, w, v_star) for n in N)
 
 end = time.time()
 
