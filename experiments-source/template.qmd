@@ -60,4 +60,4 @@ Document the duration and key dates of the experiment. This helps in project man
 
 ## References
 
-Cite all sources that informed your experiment, including research papers, datasets, and tools. This section ensures that your work is properly grounded in existing research and that others can trace the origins of your methods and data.s
+Cite all sources that informed your experiment, including research papers, datasets, and tools. This section ensures that your work is properly grounded in existing research and that others can trace the origins of your methods and data.

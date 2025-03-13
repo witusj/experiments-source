@@ -8,9 +8,6 @@ from functools import partial
 
 from functions_new import service_time_with_no_shows, compute_convolutions, compute_convolutions_fft, calculate_objective_serv_time_lookup
 
-import numpy as np
-import time
-
 def fft_test():
     # Generate a random PMF of size 1000
     probabilities = np.random.rand(1000)
@@ -163,7 +160,7 @@ class TestCalculateObjectiveServTimeLookup(unittest.TestCase):
         schedule = []
         convolutions = self.compute_convolutions_for_schedule(schedule)
         
-        ewt, esp = calculate_objective_serv_time_lookup(schedule, self.d, self.q, convolutions)
+        ewt, esp = calculate_objective_serv_time_lookup(schedule, self.d, convolutions)
         
         # Empty schedule should result in zero waiting time and zero spillover
         self.assertEqual(ewt, 0)
@@ -174,7 +171,7 @@ class TestCalculateObjectiveServTimeLookup(unittest.TestCase):
         schedule = [1]
         convolutions = self.compute_convolutions_for_schedule(schedule)
         
-        ewt, esp = calculate_objective_serv_time_lookup(schedule, self.d, self.q, convolutions)
+        ewt, esp = calculate_objective_serv_time_lookup(schedule, self.d, convolutions)
         
         # Single patient should have zero waiting time
         # Spillover depends on service time distribution and duration threshold
@@ -186,7 +183,7 @@ class TestCalculateObjectiveServTimeLookup(unittest.TestCase):
         schedule = [3]
         convolutions = self.compute_convolutions_for_schedule(schedule)
         
-        ewt, esp = calculate_objective_serv_time_lookup(schedule, self.d, self.q, convolutions)
+        ewt, esp = calculate_objective_serv_time_lookup(schedule, self.d, convolutions)
         
         # Should have positive waiting time and spillover
         self.assertGreater(ewt, 0)
@@ -197,7 +194,7 @@ class TestCalculateObjectiveServTimeLookup(unittest.TestCase):
         schedule = [2, 0, 3, 1]
         convolutions = self.compute_convolutions_for_schedule(schedule)
         
-        ewt, esp = calculate_objective_serv_time_lookup(schedule, self.d, self.q, convolutions)
+        ewt, esp = calculate_objective_serv_time_lookup(schedule, self.d, convolutions)
         
         # Should have positive waiting time and spillover
         self.assertGreaterEqual(ewt, 0)
@@ -211,8 +208,8 @@ class TestCalculateObjectiveServTimeLookup(unittest.TestCase):
         schedule2 = [2, 0, 2]
         convolutions2 = self.compute_convolutions_for_schedule(schedule2)
         
-        ewt1, esp1 = calculate_objective_serv_time_lookup(schedule1, self.d, self.q, convolutions1)
-        ewt2, esp2 = calculate_objective_serv_time_lookup(schedule2, self.d, self.q, convolutions2)
+        ewt1, esp1 = calculate_objective_serv_time_lookup(schedule1, self.d, convolutions1)
+        ewt2, esp2 = calculate_objective_serv_time_lookup(schedule2, self.d, convolutions2)
         
         # Schedule with a break should have less or equal waiting time
         self.assertLessEqual(ewt2, ewt1)
@@ -222,8 +219,8 @@ class TestCalculateObjectiveServTimeLookup(unittest.TestCase):
         schedule = [2, 1, 3]
         convolutions = self.compute_convolutions_for_schedule(schedule)
         
-        ewt1, esp1 = calculate_objective_serv_time_lookup(schedule, self.d, self.q, convolutions)
-        ewt2, esp2 = calculate_objective_serv_time_lookup(schedule, self.d, self.q, convolutions)
+        ewt1, esp1 = calculate_objective_serv_time_lookup(schedule, self.d, convolutions)
+        ewt2, esp2 = calculate_objective_serv_time_lookup(schedule, self.d, convolutions)
         
         self.assertEqual(ewt1, ewt2)
         self.assertEqual(esp1, esp2)
@@ -243,7 +240,7 @@ class TestCalculateObjectiveServTimeLookup(unittest.TestCase):
         results = []
         for schedule in test_schedules:
             convolutions = self.compute_convolutions_for_schedule(schedule)
-            ewt, esp = calculate_objective_serv_time_lookup(schedule, self.d, self.q, convolutions)
+            ewt, esp = calculate_objective_serv_time_lookup(schedule, self.d, convolutions)
             
             # Store results for comparison
             results.append((schedule, ewt, esp))
@@ -345,7 +342,7 @@ class SpeedTests(unittest.TestCase):
             start_time = time.time()
             
             for _ in range(iterations):
-                calculate_objective_serv_time_lookup(schedule, self.d, self.q, convolutions)
+                calculate_objective_serv_time_lookup(schedule, self.d, convolutions)
             
             elapsed = time.time() - start_time
             results.append((name, elapsed / iterations))
@@ -379,7 +376,7 @@ class SpeedTests(unittest.TestCase):
                 convolutions = compute_convolutions(self.service_time, sum(schedule), self.q)
                 
                 # Calculate objective using these convolutions
-                calculate_objective_serv_time_lookup(schedule, self.d, self.q, convolutions)
+                calculate_objective_serv_time_lookup(schedule, self.d, convolutions)
             
             elapsed = time.time() - start_time
             results.append((name, elapsed / iterations))
@@ -426,7 +423,7 @@ def test_schedule_variations():
     
     for name, schedule in schedules:
         # Calculate metrics
-        ewt, esp = calculate_objective_serv_time_lookup(schedule, d, q, convolutions)
+        ewt, esp = calculate_objective_serv_time_lookup(schedule, d, convolutions)
         
         # Store results
         results.append((name, schedule, ewt, esp, ewt + esp))

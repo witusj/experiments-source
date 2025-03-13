@@ -88,14 +88,13 @@ def compute_convolutions_fft(probabilities, N, q=0.0):
         convolutions[k] = fft_convolve(convolutions[k - 1], probs_adj_q)
     return convolutions
 
-def calculate_objective_serv_time_lookup(schedule: List[int], d: int, q: float, convolutions: dict) -> Tuple[float, float]:
+def calculate_objective_serv_time_lookup(schedule: List[int], d: int, convolutions: dict) -> Tuple[float, float]:
     """
     Calculate the objective value based on the given schedule and parameters using precomputed convolutions.
     This function uses precomputed convolutions of the service time distribution,
     starting from the 1-fold convolution (key 1) which contains the adjusted service time distribution.
     Parameters:
     schedule (List[int]): A list representing the number of patients scheduled in each time slot.
-    d (int): Duration threshold or maximum allowed service time per slot.
     q (float): No-show probability.
     convolutions (dict): Precomputed convolutions of the service time distribution, with key 1 containing the adjusted service time distribution.
     Returns:
