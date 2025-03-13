@@ -17,6 +17,7 @@ book:
         - xgboost-objective-calc-large.qmd
         - local-search-regressor-large.qmd
         - appointment-scheduling-heuristics.qmd
+        - functions_tests.qmd
 
 bibliography: references.bib
 
