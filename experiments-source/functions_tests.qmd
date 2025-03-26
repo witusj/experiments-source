@@ -14,24 +14,25 @@ from typing import List, Tuple
 ```
 
 ```{python}
-def get_v_star(T):
-    # Create an initial vector 'u' of zeros with length 'T'
-    u = np.zeros(T)
-    # Set the first element of vector 'u' to -1 and the last element to 1
-    u[0] = -1
-    u[-1] = 1
-    # Initialize the list 'v_star' with the initial vector 'u'
-    v_star = [u.copy()]
-    
-    # Loop over the length of 'u' minus one times to generate shifted versions of 'u'
-    for i in range(T - 1):
-        # Rotate 'u' by moving the last element to the front
-        u = np.roll(u, 1)
-        # Append the updated vector 'u' to the list 'v_star'
-        v_star.append(u.copy())
-    
-    # Return 'v_star' as a list of lists, which is easier to process in the main function
-    return np.array(v_star)
+from functions import get_v_star
+# def get_v_star(T):
+#     # Create an initial vector 'u' of zeros with length 'T'
+#     u = np.zeros(T)
+#     # Set the first element of vector 'u' to -1 and the last element to 1
+#     u[0] = -1
+#     u[-1] = 1
+#     # Initialize the list 'v_star' with the initial vector 'u'
+#     v_star = [u.copy()]
+#     
+#     # Loop over the length of 'u' minus one times to generate shifted versions of 'u'
+#     for i in range(T - 1):
+#         # Rotate 'u' by moving the last element to the front
+#         u = np.roll(u, 1)
+#         # Append the updated vector 'u' to the list 'v_star'
+#         v_star.append(u.copy())
+#     
+#     # Return 'v_star' as a list of lists, which is easier to process in the main function
+#     return np.array(v_star)
 
 def create_neighbors_list(s: list[int]) -> (list[int], list[int]):
     """
@@ -669,14 +670,17 @@ def create_schedule_network_from_lists_test():
     ]
     
     # Create the network graph
-    fig = create_schedule_network(schedules, objective_values, echo=True)
+    fig = create_schedule_network_from_lists(schedules, objective_values, echo=True)
     
     # Display the graph
     fig.show()
     
-create_schedule_network_from_lists()
+create_schedule_network_from_lists_test()
 ```
+
 ```{python}
+from functions import powerset, get_neighborhood
+
 def local_search_w_intermediates(
     x: List[int],
     d: int,
@@ -710,7 +714,7 @@ def local_search_w_intermediates(
     x_star = np.array(x).flatten()  # Ensure it's a 1D array
 
     # Calculate initial objectives and cost
-    objectives_star = calculate_objective_serv_time_lookup(x_star, d, q, convolutions)
+    objectives_star = calculate_objective_serv_time_lookup(x_star, d, convolutions)
     c_star = w * objectives_star[0] + (1 - w) * objectives_star[1]
 
     # Initialize list of intermediate solutions with the initial solution
@@ -737,7 +741,7 @@ def local_search_w_intermediates(
 
         for neighbor in neighborhood:
             # Calculate objectives for the neighbor
-            objectives = calculate_objective_serv_time_lookup(neighbor, d, q, convolutions)
+            objectives = calculate_objective_serv_time_lookup(neighbor, d, convolutions)
             cost = w * objectives[0] + (1 - w) * objectives[1]
 
             # Compare scalar costs
@@ -785,7 +789,6 @@ def test_local_search_w_intermediates():
     x_star_baseline, obj_baseline = local_search(
         x=x_initial,
         d=d,
-        q=q,
         convolutions=convolutions,
         w=w,
         v_star=v_star,
@@ -824,5 +827,3 @@ def test_local_search_w_intermediates():
 # Run the test
 test_local_search_w_intermediates()
 ```
-
-
