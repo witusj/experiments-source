@@ -571,7 +571,7 @@ for idx, (n, schedules, objectives) in enumerate(zip(N, schedules_list, objectiv
 
 Until now we have used the Bailey-Welch rule to set the initial schedule for out local search. Comparing the initial schedule with the final optimal schedule we observed a certain pattern. We tried to capture this pattern in a adjusted model for the initial schedule.
 
-```python
+``` python
 def build_quasi_optimal_schedule(N, T):
     """
     Build a quasi-optimal schedule starting with [2, 1, 1, 0, ...] 

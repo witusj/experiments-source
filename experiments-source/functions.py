@@ -228,6 +228,38 @@ def create_random_schedules(T, N, num_schedules):
     schedules.append(schedule)
   return(schedules)
 
+# def build_welch_bailey_schedule(N, T):
+#     """
+#     Build a schedule based on the Welch and Bailey (1952) heuristic.
+# 
+#     Parameters:
+#     N (int): Number of patients to be scheduled.
+#     T (int): Number of time intervals in the schedule.
+# 
+#     Returns:
+#     list: A schedule of length T where each item represents the number of patients scheduled
+#           at the corresponding time interval.
+#     """
+#     # Initialize the schedule with zeros
+#     schedule = [0] * T
+# 
+#     # Schedule the first two patients at the beginning
+#     schedule[0] = 2
+#     remaining_patients = N - 2
+# 
+#     # Distribute patients in the middle time slots with gaps
+#     for t in range(1, T - 1):
+#         if remaining_patients <= 0:
+#             break
+#         if t % 2 == 1:  # Create gaps (only schedule patients at odd time slots)
+#             schedule[t] = 1
+#             remaining_patients -= 1
+# 
+#     # Push any remaining patients to the last time slot
+#     schedule[-1] += remaining_patients
+# 
+#     return schedule
+  
 def build_welch_bailey_schedule(N, T):
     """
     Build a schedule based on the Welch and Bailey (1952) heuristic.
@@ -251,9 +283,9 @@ def build_welch_bailey_schedule(N, T):
     for t in range(1, T - 1):
         if remaining_patients <= 0:
             break
-        if t % 2 == 1:  # Create gaps (only schedule patients at odd time slots)
-            schedule[t] = 1
-            remaining_patients -= 1
+    
+        schedule[t] = 1
+        remaining_patients -= 1
 
     # Push any remaining patients to the last time slot
     schedule[-1] += remaining_patients

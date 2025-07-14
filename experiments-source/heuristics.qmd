@@ -432,6 +432,7 @@ print("Optimized Schedules:", x_stars)
 print("Objective Values:", obj_vals)
 print(f"Search time: {end - start:.2f} seconds")
 ```
+
 ::: column-screen
 ```{python}
 for idx, (n, schedules, objectives) in enumerate(zip(N, schedules_list, objectives_list), start=1):
@@ -511,6 +512,7 @@ print("Optimized Schedules:", x_stars)
 print("Objective Values:", obj_vals)
 print(f"Search time: {end - start:.2f} seconds")
 ```
+
 ::: column-screen
 ```{python}
 for idx, (n, schedules, objectives) in enumerate(zip(N, schedules_list, objectives_list), start=1):
